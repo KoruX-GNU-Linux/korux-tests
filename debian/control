@@ -1,0 +1,18 @@
+Source: korux-tests
+Section: utils
+Priority: optional
+Maintainer: Kirill Rekhov <krekhov.dev@gmail.com>
+Rules-Requires-Root: no
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Homepage: https://github.com/KoruX-Gnu-Linux/korux-tests
+
+Package: korux-tests
+Architecture: all
+Depends: ${misc:Depends}
+Description: Tool for automated testing of the KoruX distribution
+ korux-tests provides the run-korux-tests script, which executes automated
+ tests designed specifically for the KoruX distribution. These tests help verify
+ critical aspects of the system, ensuring essential functionality and compliance
+ with project requirements. This utility is intended for maintainers and
+ developers to streamline quality assurance for KoruX.
