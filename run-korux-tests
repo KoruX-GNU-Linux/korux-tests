@@ -139,11 +139,11 @@ flag_grub_default_grep="good"
 
 err_counter=0
 check_fail "$flag_grubd_default" \
-"FAIL: Directory /etc/grub.d missing or empty."
+"FAIL: Directory /etc/grub.d missing or empty"
 check_fail "$flag_grub_default" \
-"FAIL: File /etc/default/grub missing or empty."
+"FAIL: File /etc/default/grub missing or empty"
 check_fail "$flag_grub_default_grep" \
-"FAIL: Not all required kernel params found in /etc/default/grub."
+"FAIL: Not all required kernel params found in /etc/default/grub"
 check_err_counter
 
 # ----------------------------------------
@@ -163,9 +163,9 @@ fi
 
 err_counter=0
 check_fail "$flag_9100_vifm" \
-"FAIL: Directory /root/.config/vifm missing or empty."
+"FAIL: Directory /root/.config/vifm missing or empty"
 check_fail "$flag_9100_mc" \
-"FAIL: Directory /root/.config/mc missing or empty."
+"FAIL: Directory /root/.config/mc missing or empty"
 check_err_counter
 
 # ----------------------------------------
@@ -188,11 +188,11 @@ fi
 
 err_counter=0
 check_fail "$flag_9110_how_can_i_help_at_boot" \
-"FAIL: File /usr/local/bin/how-can-i-help-at-boot missing or not executable."
+"FAIL: File /usr/local/bin/how-can-i-help-at-boot missing or not executable"
 check_fail "$flag_9110_how_can_i_help_service" \
-"FAIL: File /etc/systemd/system/how-can-i-help.service missing or empty."
+"FAIL: File /etc/systemd/system/how-can-i-help.service missing or empty"
 check_fail "$flag_9110_how_can_i_help_service_enabled" \
-"FAIL: Service how-can-i-help.service not enabled."
+"FAIL: Service how-can-i-help.service not enabled"
 check_err_counter
 
 # ----------------------------------------
@@ -217,9 +217,9 @@ do
 done
 
 check_fail "$flag_9120_docker_keyrings" \
-"FAIL: File /etc/apt/keyrings/docker.asc missing or empty."
+"FAIL: File /etc/apt/keyrings/docker.asc missing or empty"
 check_fail "$flag_9120_docker_sources_list" \
-"FAIL: File /etc/apt/sources.list.d/docker.list missing or empty."
+"FAIL: File /etc/apt/sources.list.d/docker.list missing or empty"
 check_err_counter
 
 # ----------------------------------------
@@ -233,7 +233,7 @@ fi
 
 err_counter=0
 check_fail "$flag_9130_desktop_theme" \
-"FAIL: Current desktop theme not 'korux-theme'."
+"FAIL: Current desktop theme not 'korux-theme'"
 check_err_counter
 
 # ----------------------------------------
