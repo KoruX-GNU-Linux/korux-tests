@@ -10,7 +10,7 @@ if [ "$(id -u)" -ne 0 ]; then
 	exit 1
 fi
 
-if ! grep 'KoruX' /etc/os-release >/dev/null 2>&1; then
+if ! grep -q 'KoruX' /etc/os-release; then
 	echo "Not KoruX operating system."
 	echo "It is better to run these tests on KoruX."
 	exit 1
@@ -21,7 +21,7 @@ echo "After installing the system, run this to verify that recent changes in"
 echo "KoruX are working as expected."
 echo
 
-if ! ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \K[\d.]+' >/dev/null 2>&1; then
+if ! ip route get 8.8.8.8 2>/dev/null | grep -q -oP 'src \K[\d.]+'; then
 	echo "Internet connection required"
 	exit 1
 fi
@@ -55,7 +55,7 @@ check_fail()
 
 check_package()
 {
-	if ! dpkg -l | awk '{print $2}' | grep "^$1$" >/dev/null 2>&1; then
+	if ! dpkg -l | awk '{print $2}' | grep -q "^$1$"; then
 		echo "FAIL: Package not found '$1'" >> FAILED
 		err_counter=$((err_counter + 1))
 	fi
@@ -87,7 +87,7 @@ done
 dpkg -l | awk 'NR > 5 {print $2}' > /tmp/dpkg-l
 
 while IFS= read -r p; do
-	if ! grep -Fx "$p" /tmp/dpkg-l >/dev/null 2>&1; then
+	if ! grep -qFx "$p" /tmp/dpkg-l; then
 		echo "FAIL: Package not found '$p'" >> FAILED
 		err_counter=$((err_counter + 1))
 	fi
@@ -129,12 +129,12 @@ if [ -s /etc/default/grub ]; then
 	flag_grub_default="good"
 fi
 
-grep 'quiet' /etc/default/grub >/dev/null 2>&1 && \
-grep 'net.ifnames=0' /etc/default/grub >/dev/null 2>&1 && \
-grep 'biosdevname=0' /etc/default/grub >/dev/null 2>&1 && \
-grep 'slub_debug=P' /etc/default/grub >/dev/null 2>&1 && \
-grep 'slab_nomerge' /etc/default/grub >/dev/null 2>&1 && \
-grep 'page_poison=1' /etc/default/grub >/dev/null 2>&1 && \
+grep -q 'quiet' /etc/default/grub && \
+grep -q 'net.ifnames=0' /etc/default/grub && \
+grep -q 'biosdevname=0' /etc/default/grub && \
+grep -q 'slub_debug=P' /etc/default/grub && \
+grep -q 'slab_nomerge' /etc/default/grub && \
+grep -q 'page_poison=1' /etc/default/grub && \
 flag_grub_default_grep="good"
 
 err_counter=0
@@ -220,6 +220,20 @@ check_fail "$flag_9120_docker_keyrings" \
 "FAIL: File /etc/apt/keyrings/docker.asc missing or empty."
 check_fail "$flag_9120_docker_sources_list" \
 "FAIL: File /etc/apt/sources.list.d/docker.list missing or empty."
+check_err_counter
+
+# ----------------------------------------
+
+flag_9130_desktop_theme="fail"
+
+current_theme=$(update-alternatives --query desktop-theme | awk '/^Value:/ {print $2}')
+if echo "$current_theme" | grep -q 'korux-theme'; then
+	flag_9130_desktop_theme="good"
+fi
+
+err_counter=0
+check_fail "$flag_9130_desktop_theme" \
+"FAIL: Current desktop theme not 'korux-theme'."
 check_err_counter
 
 # ----------------------------------------
