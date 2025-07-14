@@ -1,1 +1,232 @@
 #!/bin/sh
+#
+# This script is intended for automated post-installation testing of the KoruX
+# OS, which is built using the live-build project. See the link for details:
+# https://github.com/KoruX-Gnu-Linux/KoruX
+#
+
+if [ "$(id -u)" -ne 0 ]; then
+	>&2 echo "Please, execute this script by sudo."
+	exit 1
+fi
+
+if ! grep 'KoruX' /etc/os-release >/dev/null 2>&1; then
+	echo "Not KoruX operating system."
+	echo "It is better to run these tests on KoruX."
+	exit 1
+fi
+
+echo "This script performs automated tests for the KoruX GNU/Linux distribution."
+echo "After installing the system, run this to verify that recent changes in"
+echo "KoruX are working as expected."
+echo
+
+if ! ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \K[\d.]+' >/dev/null 2>&1; then
+	echo "Internet connection required"
+	exit 1
+fi
+
+while true; do
+	printf "Continue? [y/n]: "
+	read -r answer
+	case "$answer" in
+	[Yy]*) break ;;
+	[Nn]*) exit 1 ;;
+	*) echo "Please answer y or n" ;;
+	esac
+done
+
+echo
+rm -f FAILED
+
+# ----------------------------------------
+
+check_fail()
+{
+	flag_name="$1"
+	fail_string="$2"
+
+	if [ "$flag_name" = "fail" ]; then
+		echo "$fail_string" >> FAILED
+		err_counter=$((err_counter + 1))
+	fi
+}
+
+
+check_package()
+{
+	if ! dpkg -l | awk '{print $2}' | grep "^$1$" >/dev/null 2>&1; then
+		echo "FAIL: Package not found '$1'" >> FAILED
+		err_counter=$((err_counter + 1))
+	fi
+}
+
+check_err_counter()
+{
+	if [ "$err_counter" -gt 0 ]; then
+		echo "STATUS: FAILED"
+	else
+		echo "STATUS: PASS"
+	fi
+}
+
+# ----------------------------------------
+
+echo "--- all_packages_check ---"
+
+err_counter=0
+
+for f in live.list.chroot pkgs.list.chroot;
+do
+	wget https://github.com/KoruX-Gnu-Linux/KoruX/raw/master/config/package-lists/$f -P /tmp >/dev/null 2>&1
+	grep -v -e '^#' -e '^$' /tmp/$f >> /tmp/all-installed-packages
+	sed -i '/^live-task-xfce$/d;/^live-boot$/d;/^live-config$/d;/^live-config-systemd$/d' \
+	/tmp/all-installed-packages
+done
+
+dpkg -l | awk 'NR > 5 {print $2}' > /tmp/dpkg-l
+
+while IFS= read -r p; do
+	if ! grep -Fx "$p" /tmp/dpkg-l >/dev/null 2>&1; then
+		echo "FAIL: Package not found '$p'" >> FAILED
+		err_counter=$((err_counter + 1))
+	fi
+done < /tmp/all-installed-packages
+
+rm /tmp/dpkg-l
+rm /tmp/live.list.chroot
+rm /tmp/pkgs.list.chroot
+rm /tmp/all-installed-packages
+
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- chroot_packages_check ---"
+
+err_counter=0
+
+for p in calamares-settings-korux devilutionx-data devilutionx;
+do
+	check_package "$p"
+done
+
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- grub_check ---"
+
+flag_grubd_default="fail"
+flag_grub_default="fail"
+flag_grub_default_grep="fail"
+
+if [ -d /etc/grub.d ] && [ "$(ls -A /etc/grub.d 2>/dev/null)" ]; then
+	flag_grubd_default="good"
+fi
+
+if [ -s /etc/default/grub ]; then
+	flag_grub_default="good"
+fi
+
+grep 'quiet' /etc/default/grub >/dev/null 2>&1 && \
+grep 'net.ifnames=0' /etc/default/grub >/dev/null 2>&1 && \
+grep 'biosdevname=0' /etc/default/grub >/dev/null 2>&1 && \
+grep 'slub_debug=P' /etc/default/grub >/dev/null 2>&1 && \
+grep 'slab_nomerge' /etc/default/grub >/dev/null 2>&1 && \
+grep 'page_poison=1' /etc/default/grub >/dev/null 2>&1 && \
+flag_grub_default_grep="good"
+
+err_counter=0
+check_fail "$flag_grubd_default" \
+"FAIL: Directory /etc/grub.d missing or empty."
+check_fail "$flag_grub_default" \
+"FAIL: File /etc/default/grub missing or empty."
+check_fail "$flag_grub_default_grep" \
+"FAIL: Not all required kernel params found in /etc/default/grub."
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- hooks_work_check ---"
+
+flag_9100_vifm="fail"
+flag_9100_mc="fail"
+
+if [ -d /root/.config/vifm ] && [ "$(ls -A /root/.config/vifm 2>/dev/null)" ]; then
+	flag_9100_vifm="good"
+fi
+
+if [ -d /root/.config/mc ] && [ "$(ls -A /root/.config/mc 2>/dev/null)" ]; then
+	flag_9100_mc="good"
+fi
+
+err_counter=0
+check_fail "$flag_9100_vifm" \
+"FAIL: Directory /root/.config/vifm missing or empty."
+check_fail "$flag_9100_mc" \
+"FAIL: Directory /root/.config/mc missing or empty."
+check_err_counter
+
+# ----------------------------------------
+
+flag_9110_how_can_i_help_at_boot="fail"
+flag_9110_how_can_i_help_service="fail"
+flag_9110_how_can_i_help_service_enabled="fail"
+
+if [ -x /usr/local/bin/how-can-i-help-at-boot ]; then
+	flag_9110_how_can_i_help_at_boot="good"
+fi
+
+if [ -s /etc/systemd/system/how-can-i-help.service ]; then
+	flag_9110_how_can_i_help_service="good"
+fi
+
+if systemctl is-enabled --quiet how-can-i-help.service >/dev/null 2>&1; then
+	flag_9110_how_can_i_help_service_enabled="good"
+fi
+
+err_counter=0
+check_fail "$flag_9110_how_can_i_help_at_boot" \
+"FAIL: File /usr/local/bin/how-can-i-help-at-boot missing or not executable."
+check_fail "$flag_9110_how_can_i_help_service" \
+"FAIL: File /etc/systemd/system/how-can-i-help.service missing or empty."
+check_fail "$flag_9110_how_can_i_help_service_enabled" \
+"FAIL: Service how-can-i-help.service not enabled."
+check_err_counter
+
+# ----------------------------------------
+
+flag_9120_docker_keyrings="fail"
+flag_9120_docker_sources_list="fail"
+
+if [ -s /etc/apt/keyrings/docker.asc ]; then
+	flag_9120_docker_keyrings="good"
+fi
+
+if [ -s /etc/apt/sources.list.d/docker.list ]; then
+	flag_9120_docker_sources_list="good"
+fi
+
+err_counter=0
+docker_pkgs="docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+
+for p in $docker_pkgs;
+do
+	check_package "$p"
+done
+
+check_fail "$flag_9120_docker_keyrings" \
+"FAIL: File /etc/apt/keyrings/docker.asc missing or empty."
+check_fail "$flag_9120_docker_sources_list" \
+"FAIL: File /etc/apt/sources.list.d/docker.list missing or empty."
+check_err_counter
+
+# ----------------------------------------
+
+if [ -s FAILED ]; then
+	chown "$SUDO_USER:" FAILED
+	echo
+	echo "You have failed tests."
+	echo "Please take a look at the ./FAILED file."
+fi
