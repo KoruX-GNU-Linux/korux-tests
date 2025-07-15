@@ -52,8 +52,18 @@ check_fail()
 	fi
 }
 
+fail_if_package_found()
+{
+	pattern="$1"
+	regex="^$(echo "$pattern" | sed 's/[]\.|$(){}?+^]/\\&/g; s/\*/.*/g')$"
 
-check_package()
+	if dpkg -l | awk '{print $2}' | grep -E -q "$regex"; then
+		echo "FAIL: Package found '$pattern'" >> FAILED
+		err_counter=$((err_counter + 1))
+	fi
+}
+
+fail_if_package_not_found()
 {
 	if ! dpkg -l | awk '{print $2}' | grep -q "^$1$"; then
 		echo "FAIL: Package not found '$1'" >> FAILED
@@ -108,7 +118,7 @@ err_counter=0
 
 for p in calamares-settings-korux devilutionx-data devilutionx;
 do
-	check_package "$p"
+	fail_if_package_not_found "$p"
 done
 
 check_err_counter
@@ -117,11 +127,12 @@ check_err_counter
 
 echo "--- grub_check ---"
 
+err_counter=0
 flag_grubd_default="fail"
 flag_grub_default="fail"
 flag_grub_default_grep="fail"
 
-if [ -d /etc/grub.d ] && [ "$(ls -A /etc/grub.d 2>/dev/null)" ]; then
+if [ -d /etc/grub.d ] && [ "$(ls /etc/grub.d 2>/dev/null)" ]; then
 	flag_grubd_default="good"
 fi
 
@@ -137,7 +148,6 @@ grep -q 'slab_nomerge' /etc/default/grub && \
 grep -q 'page_poison=1' /etc/default/grub && \
 flag_grub_default_grep="good"
 
-err_counter=0
 check_fail "$flag_grubd_default" \
 "FAIL: Directory /etc/grub.d missing or empty"
 check_fail "$flag_grub_default" \
@@ -150,26 +160,27 @@ check_err_counter
 
 echo "--- hooks_work_check ---"
 
-flag_9100_vifm="fail"
-flag_9100_mc="fail"
-
-if [ -d /root/.config/vifm ] && [ "$(ls -A /root/.config/vifm 2>/dev/null)" ]; then
-	flag_9100_vifm="good"
-fi
-
-if [ -d /root/.config/mc ] && [ "$(ls -A /root/.config/mc 2>/dev/null)" ]; then
-	flag_9100_mc="good"
-fi
-
 err_counter=0
-check_fail "$flag_9100_vifm" \
+flag_9100_root_vifm="fail"
+flag_9100_root_mc="fail"
+
+if [ -d /root/.config/vifm ] && [ "$(ls /root/.config/vifm 2>/dev/null)" ]; then
+	flag_9100_root_vifm="good"
+fi
+
+if [ -d /root/.config/mc ] && [ "$(ls /root/.config/mc 2>/dev/null)" ]; then
+	flag_9100_root_mc="good"
+fi
+
+check_fail "$flag_9100_root_vifm" \
 "FAIL: Directory /root/.config/vifm missing or empty"
-check_fail "$flag_9100_mc" \
+check_fail "$flag_9100_root_mc" \
 "FAIL: Directory /root/.config/mc missing or empty"
 check_err_counter
 
 # ----------------------------------------
 
+err_counter=0
 flag_9110_how_can_i_help_at_boot="fail"
 flag_9110_how_can_i_help_service="fail"
 flag_9110_how_can_i_help_service_enabled="fail"
@@ -186,7 +197,6 @@ if systemctl is-enabled --quiet how-can-i-help.service >/dev/null 2>&1; then
 	flag_9110_how_can_i_help_service_enabled="good"
 fi
 
-err_counter=0
 check_fail "$flag_9110_how_can_i_help_at_boot" \
 "FAIL: File /usr/local/bin/how-can-i-help-at-boot missing or not executable"
 check_fail "$flag_9110_how_can_i_help_service" \
@@ -197,6 +207,7 @@ check_err_counter
 
 # ----------------------------------------
 
+err_counter=0
 flag_9120_docker_keyrings="fail"
 flag_9120_docker_sources_list="fail"
 
@@ -208,12 +219,11 @@ if [ -s /etc/apt/sources.list.d/docker.list ]; then
 	flag_9120_docker_sources_list="good"
 fi
 
-err_counter=0
 docker_pkgs="docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
 
 for p in $docker_pkgs;
 do
-	check_package "$p"
+	fail_if_package_not_found "$p"
 done
 
 check_fail "$flag_9120_docker_keyrings" \
@@ -224,16 +234,183 @@ check_err_counter
 
 # ----------------------------------------
 
-flag_9130_desktop_theme="fail"
+err_counter=0
+flag_9130_korux_theme="fail"
 
 current_theme=$(update-alternatives --query desktop-theme | awk '/^Value:/ {print $2}')
 if echo "$current_theme" | grep -q 'korux-theme'; then
-	flag_9130_desktop_theme="good"
+	flag_9130_korux_theme="good"
 fi
 
-err_counter=0
-check_fail "$flag_9130_desktop_theme" \
+check_fail "$flag_9130_korux_theme" \
 "FAIL: Current desktop theme not 'korux-theme'"
+check_err_counter
+
+# ----------------------------------------
+
+# skip tests for 9140 hook
+# nothing to test
+
+# ----------------------------------------
+
+# skip tests for 9150 hook
+# nothing to test
+
+# ----------------------------------------
+
+err_counter=0
+flag_9160_initd_clean_home="fail"
+flag_9160_rcd_clean_home="fail"
+
+if [ -x /etc/init.d/clean-home ]; then
+	flag_9160_initd_clean_home="good"
+fi
+
+if ls /etc/rc*.d/*clean-home >/dev/null 2>&1; then
+	flag_9160_rcd_clean_home="good"
+fi
+
+check_fail "$flag_9160_initd_clean_home" \
+"FAIL: File /etc/init.d/clean-home missing or not executable"
+check_fail "$flag_9160_rcd_clean_home" \
+"FAIL: File(s) /etc/rc*.d/*clean-home missing"
+check_err_counter
+
+# ----------------------------------------
+
+err_counter=0
+flag_9170_rc_packages="fail"
+flag_9170_cache_man="fail"
+
+unwanted_pkgs="mlterm* xiterm+thai mozc* anthy* goldendict \
+quodlibet exfalso im-config ibus mythes* myspell* hyphen* \
+hunspell* aspell* libreoffice-l10n* firefox-esr-l10n* \
+debian-reference-es debian-reference-it"
+
+for p in $unwanted_pkgs;
+do
+	fail_if_package_found "$p"
+done
+
+fail_if_package_not_found "dconf-cli"
+
+if dpkg -l | awk '/^rc/{print $2}' >/dev/null 2>&1; then
+	flag_9170_rc_packages="good"
+fi
+
+if [ -d /var/cache/man ] && [ "$(ls /var/cache/man 2>/dev/null)" ]; then
+	flag_9170_cache_man="good"
+fi
+
+check_fail "$flag_9170_rc_packages" \
+"FAIL: Obsolete or removed packages with 'rc' state found"
+check_fail "$flag_9170_cache_man" \
+"FAIL: Directory /var/cache/man missing or empty"
+check_err_counter
+
+# ----------------------------------------
+
+err_counter=0
+flag_9180_perms_rc_local="fail"
+flag_9180_perms_sudoersd_pwfeedback="fail"
+flag_9180_perms_motd_10_info="fail"
+flag_9180_perms_fonts_cordata="fail"
+flag_9180_perms_fonts_cordata_files="fail"
+flag_9180_perms_how_can_i_help_service="fail"
+flag_9180_perms_opt_game_ports="fail"
+flag_9180_perms_opt_game_ports_files="fail"
+flag_9180_perms_opt_game_ports_dirs="fail"
+flag_9180_perms_opt_game_ports_install_sh="fail"
+flag_9180_perms_korux_theme_dirs="fail"
+flag_9180_perms_korux_theme_files="fail"
+
+if [ "$(stat -c '%a' /etc/rc.local 2>/dev/null)" = "755" ]; then
+	flag_9180_perms_rc_local="good"
+fi
+
+if [ "$(stat -c '%a' /etc/sudoers.d/pwfeedback 2>/dev/null)" = "0440" ]; then
+	flag_9180_perms_sudoersd_pwfeedback="good"
+fi
+
+if [ "$(stat -c '%a' /etc/update-motd.d/10-info 2>/dev/null)" = "755" ]; then
+	flag_9180_perms_motd_10_info="good"
+fi
+
+if [ "$(stat -c '%a' /usr/share/fonts/truetype/cordata 2>/dev/null)" = "755" ]; then
+	flag_9180_perms_fonts_cordata="good"
+fi
+
+for file in /usr/share/fonts/truetype/cordata/*; do
+	if [ "$(stat -c '%a' "$file" 2>/dev/null)" = "644" ]; then
+		flag_9180_perms_fonts_cordata_files="good"
+	fi
+done
+
+if [ "$(stat -c '%a' /etc/systemd/system/how-can-i-help.service 2>/dev/null)" = "644" ]; then
+	flag_9180_perms_how_can_i_help_service="good"
+fi
+
+if [ "$(stat -c '%a' /opt/game-ports 2>/dev/null)" = "755" ]; then
+	flag_9180_perms_opt_game_ports="good"
+fi
+
+if ! find /opt/game-ports -type f ! -perm 644 2>/dev/null | grep -q .; then
+	flag_9180_perms_opt_game_ports_files="good"
+fi
+
+if ! find /opt/game-ports/* -type d ! -perm 777 2>/dev/null | grep -q .; then
+	flag_9180_perms_opt_game_ports_dirs="good"
+fi
+
+if ! find /opt/game-ports -type f -name 'install.sh' ! -perm 755 2>/dev/null | grep -q .; then
+	flag_9180_perms_opt_game_ports_install_sh="good"
+fi
+
+if ! find /usr/share/desktop-base/korux-theme -type d ! -perm 755 2>/dev/null | grep -q .; then
+	flag_9180_perms_korux_theme_dirs="good"
+fi
+
+if ! find /usr/share/desktop-base/korux-theme -type f ! -perm 644 2>/dev/null | grep -q .; then
+	flag_9180_perms_korux_theme_files="good"
+fi
+
+check_fail "$flag_9180_perms_rc_local" \
+"FAIL: /etc/rc.local does not have 755 permissions"
+check_fail "$flag_9180_perms_sudoersd_pwfeedback" \
+"FAIL: /etc/sudoers.d/pwfeedback does not have 0440 permissions"
+check_fail "$flag_9180_perms_motd_10_info" \
+"FAIL: /etc/update-motd.d/10-info does not have 755 permissions"
+check_fail "$flag_9180_perms_fonts_cordata" \
+"FAIL: /usr/share/fonts/truetype/cordata does not have 755 permissions"
+check_fail "$flag_9180_perms_fonts_cordata_files" \
+"FAIL: some files in /usr/share/fonts/truetype/cordata do not have 644 permissions"
+check_fail "$flag_9180_perms_how_can_i_help_service" \
+"FAIL: /etc/systemd/system/how-can-i-help.service does not have 644 permissions"
+check_fail "$flag_9180_perms_opt_game_ports" \
+"FAIL: /opt/game-ports does not have 755 permissions"
+check_fail "$flag_9180_perms_opt_game_ports_files" \
+"FAIL: some files in /opt/game-ports do not have 644 permissions"
+check_fail "$flag_9180_perms_opt_game_ports_dirs" \
+"FAIL: some directories in /opt/game-ports/* do not have 777 permissions"
+check_fail "$flag_9180_perms_opt_game_ports_install_sh" \
+"FAIL: some install.sh scripts in /opt/game-ports do not have 755 permissions"
+check_fail "$flag_9180_perms_korux_theme_dirs" \
+"FAIL: some directories in /usr/share/desktop-base/korux-theme do not have 755 permissions"
+check_fail "$flag_9180_perms_korux_theme_files" \
+"FAIL: some files in /usr/share/desktop-base/korux-theme do not have 644 permissions"
+check_err_counter
+
+# ----------------------------------------
+
+err_counter=0
+flag_9190_motd_10_uname="fail"
+
+if [ -x /etc/update-motd.d/10-uname ]; then
+	flag_9190_motd_10_uname="good"
+fi
+
+check_fail "$flag_9190_motd_10_uname" \
+"FAIL: File /etc/update-motd.d/10-uname exist"
 check_err_counter
 
 # ----------------------------------------
