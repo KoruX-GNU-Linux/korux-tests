@@ -55,7 +55,7 @@ check_fail()
 fail_if_package_found()
 {
 	pattern="$1"
-	regex="^$(echo "$pattern" | sed 's/[]\.|$(){}?+^]/\\&/g; s/\*/.*/g')$"
+	regex="^$(echo "$pattern" | sed "s/[]\.|$(){}?+^]/\\&/g; s/\*/.*/g")$"
 
 	if dpkg -l | awk '{print $2}' | grep -E -q "$regex"; then
 		echo "FAIL: Package found '$pattern'" >> FAILED
