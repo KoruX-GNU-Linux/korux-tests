@@ -5,12 +5,14 @@
 # https://github.com/KoruX-Gnu-Linux/KoruX
 #
 
-if [ "$(id -u)" -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ];
+then
 	>&2 echo "Please, execute this script by sudo."
 	exit 1
 fi
 
-if ! grep -q 'KoruX' /etc/os-release >/dev/null 2>&1; then
+if ! grep -q 'KoruX' /etc/os-release >/dev/null 2>&1;
+then
 	echo "Not KoruX operating system."
 	echo "It is better to run these tests on KoruX."
 	exit 1
@@ -21,12 +23,14 @@ echo "After installing the system, run this to verify that recent changes in"
 echo "KoruX are working as expected."
 echo
 
-if ! ip route get 8.8.8.8 2>/dev/null | grep -q -oP 'src \K[\d.]+'; then
+if ! ip route get 8.8.8.8 2>/dev/null | grep -q -oP 'src \K[\d.]+';
+then
 	echo "Internet connection required"
 	exit 1
 fi
 
-while true; do
+while true;
+do
 	printf "Continue? [y/n]: "
 	read -r answer
 	case "$answer" in
@@ -46,7 +50,8 @@ check_fail()
 	flag_name="$1"
 	fail_string="$2"
 
-	if [ "$flag_name" = "fail" ]; then
+	if [ "$flag_name" = "fail" ];
+	then
 		echo "$fail_string" >> FAILED
 		err_counter=$((err_counter + 1))
 	fi
@@ -57,7 +62,8 @@ fail_if_package_found()
 	pattern="$1"
 	regex="^$(echo "$pattern" | sed "s/[]\.|$(){}?+^]/\\&/g; s/\*/.*/g")$"
 
-	if dpkg -l | awk '{print $2}' | grep -E -q "$regex"; then
+	if dpkg -l | awk '{print $2}' | grep -E -q "$regex";
+	then
 		echo "FAIL: Package found '$pattern'" >> FAILED
 		err_counter=$((err_counter + 1))
 	fi
@@ -65,7 +71,8 @@ fail_if_package_found()
 
 fail_if_package_not_found()
 {
-	if ! dpkg -l | awk '{print $2}' | grep -q "^$1$"; then
+	if ! dpkg -l | awk '{print $2}' | grep -q "^$1$";
+	then
 		echo "FAIL: Package not found '$1'" >> FAILED
 		err_counter=$((err_counter + 1))
 	fi
@@ -73,7 +80,8 @@ fail_if_package_not_found()
 
 check_err_counter()
 {
-	if [ "$err_counter" -gt 0 ]; then
+	if [ "$err_counter" -gt 0 ];
+	then
 		echo "STATUS: FAILED"
 	else
 		echo "STATUS: PASS"
@@ -96,8 +104,10 @@ done
 
 dpkg -l | awk 'NR > 5 {print $2}' > /tmp/dpkg-l
 
-while IFS= read -r p; do
-	if ! grep -qFx "$p" /tmp/dpkg-l >/dev/null 2>&1; then
+while IFS= read -r p;
+do
+	if ! grep -qFx "$p" /tmp/dpkg-l >/dev/null 2>&1;
+	then
 		echo "FAIL: Package not found '$p'" >> FAILED
 		err_counter=$((err_counter + 1))
 	fi
@@ -132,11 +142,13 @@ flag_grubd_default="fail"
 flag_grub_default="fail"
 flag_grub_default_grep="fail"
 
-if [ -d /etc/grub.d ] && [ "$(ls /etc/grub.d 2>/dev/null)" ]; then
+if [ -d /etc/grub.d ] && [ "$(ls /etc/grub.d 2>/dev/null)" ];
+then
 	flag_grubd_default="good"
 fi
 
-if [ -s /etc/default/grub ]; then
+if [ -s /etc/default/grub ];
+then
 	flag_grub_default="good"
 fi
 
@@ -164,11 +176,13 @@ err_counter=0
 flag_9100_root_vifm="fail"
 flag_9100_root_mc="fail"
 
-if [ -d /root/.config/vifm ] && [ "$(ls /root/.config/vifm 2>/dev/null)" ]; then
+if [ -d /root/.config/vifm ] && [ "$(ls /root/.config/vifm 2>/dev/null)" ];
+then
 	flag_9100_root_vifm="good"
 fi
 
-if [ -d /root/.config/mc ] && [ "$(ls /root/.config/mc 2>/dev/null)" ]; then
+if [ -d /root/.config/mc ] && [ "$(ls /root/.config/mc 2>/dev/null)" ];
+then
 	flag_9100_root_mc="good"
 fi
 
@@ -185,15 +199,18 @@ flag_9110_how_can_i_help_at_boot="fail"
 flag_9110_how_can_i_help_service="fail"
 flag_9110_how_can_i_help_service_enabled="fail"
 
-if [ -x /usr/local/bin/how-can-i-help-at-boot ]; then
+if [ -x /usr/local/bin/how-can-i-help-at-boot ];
+then
 	flag_9110_how_can_i_help_at_boot="good"
 fi
 
-if [ -s /etc/systemd/system/how-can-i-help.service ]; then
+if [ -s /etc/systemd/system/how-can-i-help.service ];
+then
 	flag_9110_how_can_i_help_service="good"
 fi
 
-if systemctl is-enabled --quiet how-can-i-help.service >/dev/null 2>&1; then
+if systemctl is-enabled --quiet how-can-i-help.service >/dev/null 2>&1;
+then
 	flag_9110_how_can_i_help_service_enabled="good"
 fi
 
@@ -211,11 +228,13 @@ err_counter=0
 flag_9120_docker_keyrings="fail"
 flag_9120_docker_sources_list="fail"
 
-if [ -s /etc/apt/keyrings/docker.asc ]; then
+if [ -s /etc/apt/keyrings/docker.asc ];
+then
 	flag_9120_docker_keyrings="good"
 fi
 
-if [ -s /etc/apt/sources.list.d/docker.list ]; then
+if [ -s /etc/apt/sources.list.d/docker.list ];
+then
 	flag_9120_docker_sources_list="good"
 fi
 
@@ -238,7 +257,8 @@ err_counter=0
 flag_9130_korux_theme="fail"
 
 current_theme=$(update-alternatives --query desktop-theme | awk '/^Value:/ {print $2}')
-if echo "$current_theme" | grep -q 'korux-theme'; then
+if echo "$current_theme" | grep -q 'korux-theme';
+then
 	flag_9130_korux_theme="good"
 fi
 
@@ -262,11 +282,13 @@ err_counter=0
 flag_9160_initd_clean_home="fail"
 flag_9160_rcd_clean_home="fail"
 
-if [ -x /etc/init.d/clean-home ]; then
+if [ -x /etc/init.d/clean-home ];
+then
 	flag_9160_initd_clean_home="good"
 fi
 
-if ls /etc/rc*.d/*clean-home >/dev/null 2>&1; then
+if ls /etc/rc*.d/*clean-home >/dev/null 2>&1;
+then
 	flag_9160_rcd_clean_home="good"
 fi
 
@@ -294,11 +316,13 @@ done
 
 fail_if_package_not_found "dconf-cli"
 
-if dpkg -l | awk '/^rc/{print $2}' >/dev/null 2>&1; then
+if dpkg -l | awk '/^rc/{print $2}' >/dev/null 2>&1;
+then
 	flag_9170_rc_packages="good"
 fi
 
-if [ -d /var/cache/man ] && [ "$(ls /var/cache/man 2>/dev/null)" ]; then
+if [ -d /var/cache/man ] && [ "$(ls /var/cache/man 2>/dev/null)" ];
+then
 	flag_9170_cache_man="good"
 fi
 
@@ -324,53 +348,66 @@ flag_9180_perms_opt_game_ports_install_sh="fail"
 flag_9180_perms_korux_theme_dirs="fail"
 flag_9180_perms_korux_theme_files="fail"
 
-if [ "$(stat -c '%a' /etc/rc.local 2>/dev/null)" = "755" ]; then
+if [ "$(stat -c '%a' /etc/rc.local 2>/dev/null)" = "755" ];
+then
 	flag_9180_perms_rc_local="good"
 fi
 
-if [ "$(stat -c '%a' /etc/sudoers.d/pwfeedback 2>/dev/null)" = "440" ]; then
+if [ "$(stat -c '%a' /etc/sudoers.d/pwfeedback 2>/dev/null)" = "440" ];
+then
 	flag_9180_perms_sudoersd_pwfeedback="good"
 fi
 
-if [ "$(stat -c '%a' /etc/update-motd.d/10-info 2>/dev/null)" = "755" ]; then
+if [ "$(stat -c '%a' /etc/update-motd.d/10-info 2>/dev/null)" = "755" ];
+then
 	flag_9180_perms_motd_10_info="good"
 fi
 
-if [ "$(stat -c '%a' /usr/share/fonts/truetype/cordata 2>/dev/null)" = "755" ]; then
+if [ "$(stat -c '%a' /usr/share/fonts/truetype/cordata 2>/dev/null)" = "755" ];
+then
 	flag_9180_perms_fonts_cordata="good"
 fi
 
-for file in /usr/share/fonts/truetype/cordata/*; do
-	if [ "$(stat -c '%a' "$file" 2>/dev/null)" = "644" ]; then
+for file in /usr/share/fonts/truetype/cordata/*;
+do
+	if [ "$(stat -c '%a' "$file" 2>/dev/null)" = "644" ];
+	then
 		flag_9180_perms_fonts_cordata_files="good"
 	fi
 done
 
-if [ "$(stat -c '%a' /etc/systemd/system/how-can-i-help.service 2>/dev/null)" = "644" ]; then
+if [ "$(stat -c '%a' /etc/systemd/system/how-can-i-help.service 2>/dev/null)" = "644" ];
+then
 	flag_9180_perms_how_can_i_help_service="good"
 fi
 
-if [ "$(stat -c '%a' /opt/game-ports 2>/dev/null)" = "755" ]; then
+if [ "$(stat -c '%a' /opt/game-ports 2>/dev/null)" = "755" ];
+then
 	flag_9180_perms_opt_game_ports="good"
 fi
 
-if ! find /opt/game-ports -type f ! -perm 644 2>/dev/null | grep -q .; then
+if ! find /opt/game-ports -type f ! -perm 644 ! -name 'install.sh' 2>/dev/null | grep -q .;
+then
 	flag_9180_perms_opt_game_ports_files="good"
 fi
 
-if ! find /opt/game-ports/* -type d ! -perm 777 2>/dev/null | grep -q .; then
+if ! find /opt/game-ports/* -type d ! -perm 777 2>/dev/null | grep -q .;
+then
 	flag_9180_perms_opt_game_ports_dirs="good"
 fi
 
-if ! find /opt/game-ports -type f -name 'install.sh' ! -perm 755 2>/dev/null | grep -q .; then
+if ! find /opt/game-ports -type f -name 'install.sh' ! -perm 755 2>/dev/null | grep -q .;
+then
 	flag_9180_perms_opt_game_ports_install_sh="good"
 fi
 
-if ! find /usr/share/desktop-base/korux-theme -type d ! -perm 755 2>/dev/null | grep -q .; then
+if ! find /usr/share/desktop-base/korux-theme -type d ! -perm 755 2>/dev/null | grep -q .;
+then
 	flag_9180_perms_korux_theme_dirs="good"
 fi
 
-if ! find /usr/share/desktop-base/korux-theme -type f ! -perm 644 2>/dev/null | grep -q .; then
+if ! find /usr/share/desktop-base/korux-theme -type f ! -perm 644 2>/dev/null | grep -q .;
+then
 	flag_9180_perms_korux_theme_files="good"
 fi
 
@@ -405,7 +442,8 @@ check_err_counter
 err_counter=0
 flag_9190_motd_10_uname="fail"
 
-if [ ! -x /etc/update-motd.d/10-uname ]; then
+if [ ! -x /etc/update-motd.d/10-uname ];
+then
 	flag_9190_motd_10_uname="good"
 fi
 
@@ -415,7 +453,8 @@ check_err_counter
 
 # ----------------------------------------
 
-if [ -s FAILED ]; then
+if [ -s FAILED ];
+then
 	chown "$SUDO_USER:" FAILED
 	echo
 	echo "You have failed tests."
