@@ -405,7 +405,7 @@ check_err_counter
 err_counter=0
 flag_9190_motd_10_uname="fail"
 
-if [ -x /etc/update-motd.d/10-uname ]; then
+if [ ! -x /etc/update-motd.d/10-uname ]; then
 	flag_9190_motd_10_uname="good"
 fi
 
