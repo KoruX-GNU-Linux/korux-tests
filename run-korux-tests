@@ -10,7 +10,7 @@ if [ "$(id -u)" -ne 0 ]; then
 	exit 1
 fi
 
-if ! grep -q 'KoruX' /etc/os-release; then
+if ! grep -q 'KoruX' /etc/os-release >/dev/null 2>&1; then
 	echo "Not KoruX operating system."
 	echo "It is better to run these tests on KoruX."
 	exit 1
@@ -97,7 +97,7 @@ done
 dpkg -l | awk 'NR > 5 {print $2}' > /tmp/dpkg-l
 
 while IFS= read -r p; do
-	if ! grep -qFx "$p" /tmp/dpkg-l; then
+	if ! grep -qFx "$p" /tmp/dpkg-l >/dev/null 2>&1; then
 		echo "FAIL: Package not found '$p'" >> FAILED
 		err_counter=$((err_counter + 1))
 	fi
@@ -140,12 +140,12 @@ if [ -s /etc/default/grub ]; then
 	flag_grub_default="good"
 fi
 
-grep -q 'quiet' /etc/default/grub && \
-grep -q 'net.ifnames=0' /etc/default/grub && \
-grep -q 'biosdevname=0' /etc/default/grub && \
-grep -q 'slub_debug=P' /etc/default/grub && \
-grep -q 'slab_nomerge' /etc/default/grub && \
-grep -q 'page_poison=1' /etc/default/grub && \
+grep -q 'quiet' /etc/default/grub >/dev/null 2>&1 && \
+grep -q 'net.ifnames=0' /etc/default/grub >/dev/null 2>&1 && \
+grep -q 'biosdevname=0' /etc/default/grub >/dev/null 2>&1 && \
+grep -q 'slub_debug=P' /etc/default/grub >/dev/null 2>&1 && \
+grep -q 'slab_nomerge' /etc/default/grub >/dev/null 2>&1 && \
+grep -q 'page_poison=1' /etc/default/grub >/dev/null 2>&1 && \
 flag_grub_default_grep="good"
 
 check_fail "$flag_grubd_default" \
@@ -328,7 +328,7 @@ if [ "$(stat -c '%a' /etc/rc.local 2>/dev/null)" = "755" ]; then
 	flag_9180_perms_rc_local="good"
 fi
 
-if [ "$(stat -c '%a' /etc/sudoers.d/pwfeedback 2>/dev/null)" = "0440" ]; then
+if [ "$(stat -c '%a' /etc/sudoers.d/pwfeedback 2>/dev/null)" = "440" ]; then
 	flag_9180_perms_sudoersd_pwfeedback="good"
 fi
 
