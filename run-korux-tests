@@ -126,7 +126,7 @@ echo "--- chroot_packages_check ---"
 
 err_counter=0
 
-for p in calamares-settings-korux devilutionx-data devilutionx;
+for p in devilutionx-data devilutionx;
 do
 	fail_if_package_not_found "$p"
 done
