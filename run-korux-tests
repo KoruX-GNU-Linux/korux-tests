@@ -102,7 +102,7 @@ do
 	/tmp/all-installed-packages
 done
 
-dpkg -l | awk 'NR > 5 {print $2}' > /tmp/dpkg-l
+dpkg -l | awk 'NR > 5 {sub(/:.*$/, "", $2); print $2}' > /tmp/dpkg-l
 
 while IFS= read -r p;
 do
