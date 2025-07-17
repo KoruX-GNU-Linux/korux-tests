@@ -489,7 +489,7 @@ grep -q '^FONTSIZE="10x20"' \
 grep -q '^FONTFACE="TerminusBold"' \
 /etc/default/console-setup >/dev/null 2>&1 && \
 grep -q '^VIDEOMODE=' \
-/etc/default/console-setup >/dev/null 2>&1 \
+/etc/default/console-setup >/dev/null 2>&1 && \
 flag_console_setup_grep="good"
 
 check_fail "$flag_console_setup" \
