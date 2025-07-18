@@ -14,13 +14,13 @@ fi
 if ! grep -q 'KoruX' /etc/os-release >/dev/null 2>&1;
 then
 	echo "Not KoruX operating system."
-	echo "It is better to run these tests on KoruX."
+	echo "These tests need to be run on KoruX."
 	exit 1
 fi
 
 echo "This script performs automated tests for the KoruX GNU/Linux distribution."
 echo "After installing the system, run this to verify that recent changes in"
-echo "KoruX are working as expected."
+echo "KoruX are working as expected. Internet connection required."
 echo
 
 if ! ip route get 8.8.8.8 2>/dev/null | grep -q -oP 'src \K[\d.]+';
@@ -140,7 +140,7 @@ echo "--- grub_check ---"
 err_counter=0
 flag_grubd_default="fail"
 flag_grub_default="fail"
-flag_grub_default_grep="fail"
+flag_grub_default_cmdline_grep="fail"
 flag_grub_default_grep_korux="fail"
 
 if [ -d /etc/grub.d ] && [ "$(ls /etc/grub.d 2>/dev/null)" ];
@@ -159,7 +159,7 @@ grep -q 'biosdevname=0' /etc/default/grub >/dev/null 2>&1 && \
 grep -q 'slub_debug=P' /etc/default/grub >/dev/null 2>&1 && \
 grep -q 'slab_nomerge' /etc/default/grub >/dev/null 2>&1 && \
 grep -q 'page_poison=1' /etc/default/grub >/dev/null 2>&1 && \
-flag_grub_default_grep="good"
+flag_grub_default_cmdline_grep="good"
 
 grep -q 'KoruX' /etc/default/grub >/dev/null 2>&1 && \
 flag_grub_default_grep_korux="good"
@@ -168,7 +168,7 @@ check_fail "$flag_grubd_default" \
 "FAIL: Directory /etc/grub.d missing or empty"
 check_fail "$flag_grub_default" \
 "FAIL: File /etc/default/grub missing or empty"
-check_fail "$flag_grub_default_grep" \
+check_fail "$flag_grub_default_cmdline_grep" \
 "FAIL: Not all required kernel params found in /etc/default/grub"
 check_fail "$flag_grub_default_grep_korux" \
 "FAIL: Grub distributor is not set to KoruX in /etc/default/grub"
@@ -473,6 +473,7 @@ echo "--- console_setup_check ---"
 err_counter=0
 flag_console_setup="fail"
 flag_console_setup_grep="fail"
+flag_console_setup_service="fail"
 
 if [ -s /etc/default/console-setup ]; then
 	flag_console_setup="good"
@@ -492,10 +493,18 @@ grep -q '^VIDEOMODE=' \
 /etc/default/console-setup >/dev/null 2>&1 && \
 flag_console_setup_grep="good"
 
+if systemctl is-active --quiet console-setup.service >/dev/null 2>&1 && \
+   systemctl is-enabled --quiet console-setup.service >/dev/null 2>&1
+then
+	flag_console_setup_service="good"
+fi
+
 check_fail "$flag_console_setup" \
 "FAIL: File /etc/default/console-setup missing or empty"
 check_fail "$flag_console_setup_grep" \
 "FAIL: Not all required params found in /etc/default/console-setup"
+check_fail "$flag_console_setup_service" \
+"FAIL: Service console-setup.service not active or not enabled"
 
 check_err_counter
 
@@ -506,6 +515,7 @@ echo "--- lightdm_gtk_greeter_check ---"
 err_counter=0
 flag_lightdm_gtk_greeter="fail"
 flag_lightdm_gtk_greeter_grep="fail"
+flag_lightdm_service="fail"
 
 if [ -s /etc/lightdm/lightdm-gtk-greeter.conf ]; then
 	flag_lightdm_gtk_greeter="good"
@@ -525,10 +535,19 @@ grep -q '^font-name=PxPlus Cordata PPC-400 15' \
 /etc/lightdm/lightdm-gtk-greeter.conf >/dev/null 2>&1 && \
 flag_lightdm_gtk_greeter_grep="good"
 
+if systemctl is-active --quiet lightdm.service >/dev/null 2>&1 && \
+   systemctl is-enabled --quiet lightdm.service >/dev/null 2>&1
+then
+	flag_lightdm_service="good"
+fi
+
 check_fail "$flag_lightdm_gtk_greeter" \
 "FAIL: File /etc/lightdm/lightdm-gtk-greeter.conf missing or empty"
 check_fail "$flag_lightdm_gtk_greeter_grep" \
 "FAIL: Not all required params found in /etc/lightdm/lightdm-gtk-greeter.conf"
+check_fail "$flag_lightdm_service" \
+"FAIL: Service lightdm.service not active or not enabled"
+
 check_err_counter
 
 # ----------------------------------------
@@ -538,7 +557,7 @@ echo "--- pamd_check ---"
 err_counter=0
 flag_pamd_common_auth="fail"
 flag_pamd_common_account="fail"
-flag_pamd_required_faillock="fail"
+flag_pamd_faillock_grep="fail"
 
 if [ -s /etc/pam.d/common-auth ]; then
 	flag_pamd_common_auth="good"
@@ -555,14 +574,120 @@ grep -q '^auth[[:space:]]\+required[[:space:]]\+pam_faillock.so[[:space:]]\+prea
 grep -q '^auth[[:space:]]\+\[default=die\][[:space:]]\+pam_faillock.so[[:space:]]\+authfail audit deny=5 unlock_time=600[[:space:]]*$' \
 /etc/pam.d/common-auth >/dev/null 2>&1 && \
 grep -q '^auth[[:space:]]\+sufficient[[:space:]]\+pam_faillock.so[[:space:]]\+authsucc audit deny=5 unlock_time=600[[:space:]]*$' \
-/etc/pam.d/common-auth >/dev/null 2>&1 && flag_pamd_required_faillock="good"
+/etc/pam.d/common-auth >/dev/null 2>&1 && flag_pamd_faillock_grep="good"
 
 check_fail "$flag_pamd_common_auth" \
 "FAIL: File /etc/pam.d/common-auth missing or empty"
 check_fail "$flag_pamd_common_account" \
 "FAIL: File /etc/pam.d/common-account missing or empty"
-check_fail "$flag_pamd_required_faillock" \
+check_fail "$flag_pamd_faillock_grep" \
 "FAIL: Not all required params found in /etc/pam.d/common-{auth,account}"
+
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- faillock_and_ssh_check ---"
+
+err_counter=0
+flag_faillock_conf="fail"
+flag_sshd_config="fail"
+flag_sshd_service_status="fail"
+
+if [ -s /etc/security/faillock.conf ]; then
+	flag_faillock_conf="good"
+fi
+
+if [ -s /etc/ssh/sshd_config ]; then
+	flag_sshd_config="good"
+fi
+
+if systemctl is-active --quiet sshd.service >/dev/null 2>&1 && \
+   systemctl is-enabled --quiet sshd.service >/dev/null 2>&1
+then
+	flag_sshd_service_status="good"
+fi
+
+check_fail "$flag_faillock_conf" \
+"FAIL: File /etc/security/faillock.conf missing or empty"
+check_fail "$flag_sshd_config" \
+"FAIL: File /etc/ssh/sshd_config missing or empty"
+check_fail "$flag_sshd_service_status" \
+"FAIL: Service sshd.service not active or not enabled"
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- skel_check ---"
+
+err_counter=0
+flag_etc_skel="fail"
+
+if [ -d /etc/skel ] && [ "$(ls -A /etc/skel 2>/dev/null)" ];
+then
+	flag_etc_skel="good"
+fi
+
+check_fail "$flag_etc_skel" \
+"FAIL: Directory /etc/grub.d missing or empty"
+
+check_err_counter
+
+# ----------------------------------------
+
+err_counter=0
+flag_openssl_cnf="fail"
+flag_openssl_gost_grep="fail"
+
+if [ -s /etc/ssl/openssl.cnf ]; then
+	flag_openssl_cnf="good"
+fi
+
+grep -q '^\[openssl_def\]$' \
+/etc/ssl/openssl.cnf >/dev/null 2>&1 && \
+grep -q '^engines[[:space:]]*=[[:space:]]*engine_section$' \
+/etc/ssl/openssl.cnf >/dev/null 2>&1 && \
+grep -q '^\[engine_section\]$' \
+/etc/ssl/openssl.cnf >/dev/null 2>&1 && \
+grep -q '^gost[[:space:]]*=[[:space:]]*gost_section$' \
+/etc/ssl/openssl.cnf >/dev/null 2>&1 && \
+grep -q '^\[gost_section\]$' \
+/etc/ssl/openssl.cnf >/dev/null 2>&1 && \
+grep -q '^engine_id[[:space:]]*=[[:space:]]*gost$' \
+/etc/ssl/openssl.cnf >/dev/null 2>&1 && \
+grep -q '^dynamic_path[[:space:]]*=[[:space:]]*/usr/lib/x86_64-linux-gnu/engines-3/gost.so$' \
+/etc/ssl/openssl.cnf >/dev/null 2>&1 && \
+grep -q '^default_algorithms[[:space:]]*=[[:space:]]*ALL$' \
+/etc/ssl/openssl.cnf >/dev/null 2>&1 && \
+grep -q '^CRYPT_PARAMS[[:space:]]*=[[:space:]]*id-Gost28147-89-CryptoPro-A-ParamSet$' \
+/etc/ssl/openssl.cnf >/dev/null 2>&1 && \
+flag_openssl_gost_grep="good"
+
+check_fail "$flag_openssl_cnf" \
+"FAIL: File /etc/ssl/openssl.cnf missing or empty"
+check_fail "$flag_openssl_gost_grep" \
+"FAIL: Not all required GOST engine params found in /etc/ssl/openssl.cnf"
+
+check_err_counter
+
+# ----------------------------------------
+
+err_counter=0
+flag_sudoers_pwfeedback="fail"
+flag_sudoers_pwfeedback_grep="fail"
+
+if [ -s /etc/sudoers.d/pwfeedback ]; then
+	flag_sudoers_pwfeedback="good"
+fi
+
+grep -q '^Defaults[[:space:]]\+env_reset,pwfeedback$' \
+/etc/sudoers.d/pwfeedback >/dev/null 2>&1 && \
+flag_sudoers_pwfeedback_grep="good"
+
+check_fail "$flag_sudoers_pwfeedback" \
+"FAIL: File /etc/sudoers.d/pwfeedback missing or empty"
+check_fail "$flag_sudoers_pwfeedback_grep" \
+"FAIL: Not all required params found in /etc/sudoers.d/pwfeedback"
 
 check_err_counter
 
