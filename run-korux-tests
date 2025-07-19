@@ -753,8 +753,6 @@ then
 	flag_etc_files_grep_korux="good"
 fi
 
-flag_etc_files_grep_korux="fail"
-
 check_fail "$flag_etc_issue" \
 "FAIL: File /etc/issue missing or empty"
 check_fail "$flag_etc_issue_net" \
