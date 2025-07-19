@@ -353,6 +353,7 @@ flag_9180_perms_sudoersd_pwfeedback="fail"
 flag_9180_perms_motd_10_info="fail"
 flag_9180_perms_fonts_cordata="fail"
 flag_9180_perms_fonts_cordata_files="fail"
+flag_9180_perms_korux_version="fail"
 flag_9180_perms_how_can_i_help_service="fail"
 flag_9180_perms_opt_game_ports="fail"
 flag_9180_perms_opt_game_ports_files="fail"
@@ -388,6 +389,11 @@ do
 		flag_9180_perms_fonts_cordata_files="good"
 	fi
 done
+
+if [ "$(stat -c '%a' /etc/korux_version 2>/dev/null)" = 644 ];
+then
+	flag_9180_perms_korux_version="good"
+fi
 
 if [ "$(stat -c '%a' /etc/systemd/system/how-can-i-help.service 2>/dev/null)" = "644" ];
 then
@@ -434,6 +440,8 @@ check_fail "$flag_9180_perms_fonts_cordata" \
 "FAIL: /usr/share/fonts/truetype/cordata does not have 755 permissions"
 check_fail "$flag_9180_perms_fonts_cordata_files" \
 "FAIL: some files in /usr/share/fonts/truetype/cordata do not have 644 permissions"
+check_fail "$flag_9180_perms_korux_version" \
+"FAIL: /etc/korux_version does not have 644 permissions"
 check_fail "$flag_9180_perms_how_can_i_help_service" \
 "FAIL: /etc/systemd/system/how-can-i-help.service does not have 644 permissions"
 check_fail "$flag_9180_perms_opt_game_ports" \
@@ -635,9 +643,12 @@ check_err_counter
 
 # ----------------------------------------
 
+echo "--- openssl_check ---"
+
 err_counter=0
 flag_openssl_cnf="fail"
-flag_openssl_gost_grep="fail"
+flag_openssl_cnf_gost_grep="fail"
+flag_openssl_ciphers_gost_grep="fail"
 
 if [ -s /etc/ssl/openssl.cnf ]; then
 	flag_openssl_cnf="good"
@@ -661,16 +672,24 @@ grep -q '^default_algorithms[[:space:]]*=[[:space:]]*ALL$' \
 /etc/ssl/openssl.cnf >/dev/null 2>&1 && \
 grep -q '^CRYPT_PARAMS[[:space:]]*=[[:space:]]*id-Gost28147-89-CryptoPro-A-ParamSet$' \
 /etc/ssl/openssl.cnf >/dev/null 2>&1 && \
-flag_openssl_gost_grep="good"
+flag_openssl_cnf_gost_grep="good"
+
+if openssl ciphers | tr ':' '\n' | grep GOST >/dev/null 2>&1; then
+	flag_openssl_ciphers_gost_grep="good"
+fi
 
 check_fail "$flag_openssl_cnf" \
 "FAIL: File /etc/ssl/openssl.cnf missing or empty"
-check_fail "$flag_openssl_gost_grep" \
+check_fail "$flag_openssl_cnf_gost_grep" \
 "FAIL: Not all required GOST engine params found in /etc/ssl/openssl.cnf"
+check_fail "$flag_openssl_ciphers_gost_grep" \
+"FAIL: GOST ciphers are not available in the OpenSSL configuration"
 
 check_err_counter
 
 # ----------------------------------------
+
+echo "--- sudoersd_pwfeedback_check ---"
 
 err_counter=0
 flag_sudoers_pwfeedback="fail"
@@ -688,6 +707,124 @@ check_fail "$flag_sudoers_pwfeedback" \
 "FAIL: File /etc/sudoers.d/pwfeedback missing or empty"
 check_fail "$flag_sudoers_pwfeedback_grep" \
 "FAIL: Not all required params found in /etc/sudoers.d/pwfeedback"
+
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- korux_etc_files_grep_check ---"
+
+err_counter=0
+flag_etc_issue="fail"
+flag_etc_issue_net="fail"
+flag_etc_motd="fail"
+flag_etc_os_release="fail"
+flag_etc_korux_version="fail"
+flag_etc_files_grep_korux="fail"
+
+if [ -s /etc/issue ];
+then
+	flag_etc_issue="good"
+fi
+
+if [ -s /etc/issue.net ];
+then
+	flag_etc_issue_net="good"
+fi
+
+if [ -s /etc/motd ];
+then
+	flag_etc_motd="good"
+fi
+
+if [ -s /etc/os-release ];
+then
+	flag_etc_os_release="good"
+fi
+
+if [ -s /etc/korux_version ];
+then
+	flag_etc_korux_version="good"
+fi
+
+if grep -q 'KoruX' \
+   /etc/issue /etc/issue.net /etc/motd /etc/os-release >/dev/null 2>&1;
+then
+	flag_etc_files_grep_korux="good"
+fi
+
+flag_etc_files_grep_korux="fail"
+
+check_fail "$flag_etc_issue" \
+"FAIL: File /etc/issue missing or empty"
+check_fail "$flag_etc_issue_net" \
+"FAIL: File /etc/issue.net missing or empty"
+check_fail "$flag_etc_motd" \
+"FAIL: File /etc/motd missing or empty"
+check_fail "$flag_etc_os_release" \
+"FAIL: File /etc/os-release missing or empty"
+check_fail "$flag_etc_korux_version" \
+"FAIL: File /etc/korux_version missing or empty"
+check_fail "$flag_etc_files_grep_korux" \
+"FAIL: Not all required params found in /etc/{issue,issue.net,motd,os-release}"
+
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- bash_etc_config_files_check ---"
+
+err_counter=0
+flag_etc_bash_bashrc="fail"
+flag_etc_inputrc="fail"
+flag_etc_profile="fail"
+
+if [ -s /etc/bash.bashrc ];
+then
+	flag_etc_bash_bashrc="good"
+fi
+
+if [ -s /etc/inputrc ];
+then
+	flag_etc_inputrc="good"
+fi
+
+if [ -s /etc/profile ];
+then
+	flag_etc_profile="good"
+fi
+
+check_fail "$flag_etc_bash_bashrc" \
+"FAIL: File /etc/bash.bashrc missing or empty"
+check_fail "$flag_etc_inputrc" \
+"FAIL: File /etc/inputrc missing or empty"
+check_fail "$flag_etc_profile" \
+"FAIL: File /etc/profile missing or empty"
+
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- sysctl_check ---"
+
+err_counter=0
+flag_etc_sysctl_conf="fail"
+
+if [ -s /etc/sysctl.conf ];
+then
+	flag_etc_sysctl_conf="good"
+fi
+
+if grep -q 'kernel.randomize_va_space = 2' \
+   /etc/sysctl.conf >/dev/null 2>&1;
+then
+	flag_etc_sysctl_conf_grep="good"
+fi
+
+check_fail "$flag_etc_sysctl_conf" \
+"FAIL: File /etc/sysctl.conf missing or empty"
+check_fail "$flag_etc_sysctl_conf_grep" \
+"FAIL: Not all required params found in /etc/sysctl.conf"
 
 check_err_counter
 
