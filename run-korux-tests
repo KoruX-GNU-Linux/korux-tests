@@ -11,12 +11,12 @@ then
 	exit 1
 fi
 
-#if ! grep -q 'KoruX' /etc/os-release >/dev/null 2>&1;
-#then
-#	echo "Not KoruX operating system."
-#	echo "These tests need to be run on KoruX."
-#	exit 1
-#fi
+if ! grep -q 'KoruX' /etc/os-release >/dev/null 2>&1;
+then
+	echo "Not KoruX operating system."
+	echo "These tests need to be run on KoruX."
+	exit 1
+fi
 
 echo "This script performs automated tests for the KoruX GNU/Linux distribution."
 echo "After installing the system, run this to verify that recent changes in"
