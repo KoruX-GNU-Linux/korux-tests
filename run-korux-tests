@@ -685,7 +685,6 @@ then
 	echo "Compare your system with the official KoruX configuration to resolve these differences."
 	echo
 else
-	echo
 	echo "All tests passed."
 	echo
 fi
