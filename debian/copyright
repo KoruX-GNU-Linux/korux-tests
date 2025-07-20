@@ -7,6 +7,10 @@ Files: *
 Copyright: 2025, Kirill Rekhov <krekhov.dev@gmail.com>
 License: GPL-3+
 
+Files: run-korux-tests.1
+Copyright: 2025, Kirill Rekhov <krekhov.dev@gmail.com>
+License: GPL-3+
+
 Files: debian/*
 Copyright: 2025, Kirill Rekhov <krekhov.dev@gmail.com>
 License: GPL-3+
