@@ -11,12 +11,12 @@ then
 	exit 1
 fi
 
-if ! grep -q 'KoruX' /etc/os-release >/dev/null 2>&1;
-then
-	echo "Not KoruX operating system."
-	echo "These tests need to be run on KoruX."
-	exit 1
-fi
+#if ! grep -q 'KoruX' /etc/os-release >/dev/null 2>&1;
+#then
+#	echo "Not KoruX operating system."
+#	echo "These tests need to be run on KoruX."
+#	exit 1
+#fi
 
 echo "This script performs automated tests for the KoruX GNU/Linux distribution."
 echo "After installing the system, run this to verify that recent changes in"
@@ -45,12 +45,48 @@ rm -f FAILED
 
 # ----------------------------------------
 
+check_systemctl_enabled()
+{
+	service="$1"
+	systemctl is-enabled --quiet "$service" >/dev/null 2>&1 && echo "good"
+}
+
+check_systemctl_active()
+{
+	service="$1"
+	systemctl is-active --quiet "$service" >/dev/null 2>&1 && echo "good"
+}
+
+check_dir_all()
+{
+	dir="$1"
+	[ -d "$dir" ] && [ "$(ls -A "$dir" 2>/dev/null)" ] && echo "good"
+}
+
+check_dir()
+{
+	dir="$1"
+	[ -d "$dir" ] && [ "$(ls "$dir" 2>/dev/null)" ] && echo "good"
+}
+
+check_exe_file()
+{
+	file="$1"
+	[ -x "$file" ] && echo "good"
+}
+
+check_file()
+{
+	file="$1"
+	[ -s "$file" ] && echo "good"
+}
+
 check_fail()
 {
 	flag_name="$1"
 	fail_string="$2"
 
-	if [ "$flag_name" = "fail" ];
+	if [ "$flag_name" = "fail" ] || [ -z "$flag_name" ];
 	then
 		echo "$fail_string" >> FAILED
 		err_counter=$((err_counter + 1))
@@ -135,186 +171,26 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- grub_check ---"
+echo "--- docker_packages_check ---"
 
 err_counter=0
-flag_grubd_default="fail"
-flag_grub_default="fail"
-flag_grub_default_cmdline_grep="fail"
-flag_grub_default_grep_korux="fail"
 
-if [ -d /etc/grub.d ] && [ "$(ls /etc/grub.d 2>/dev/null)" ];
-then
-	flag_grubd_default="good"
-fi
-
-if [ -s /etc/default/grub ];
-then
-	flag_grub_default="good"
-fi
-
-grep -q 'quiet' /etc/default/grub >/dev/null 2>&1 && \
-grep -q 'net.ifnames=0' /etc/default/grub >/dev/null 2>&1 && \
-grep -q 'biosdevname=0' /etc/default/grub >/dev/null 2>&1 && \
-grep -q 'slub_debug=P' /etc/default/grub >/dev/null 2>&1 && \
-grep -q 'slab_nomerge' /etc/default/grub >/dev/null 2>&1 && \
-grep -q 'page_poison=1' /etc/default/grub >/dev/null 2>&1 && \
-flag_grub_default_cmdline_grep="good"
-
-grep -q 'KoruX' /etc/default/grub >/dev/null 2>&1 && \
-flag_grub_default_grep_korux="good"
-
-check_fail "$flag_grubd_default" \
-"FAIL: Directory /etc/grub.d missing or empty"
-check_fail "$flag_grub_default" \
-"FAIL: File /etc/default/grub missing or empty"
-check_fail "$flag_grub_default_cmdline_grep" \
-"FAIL: Not all required kernel params found in /etc/default/grub"
-check_fail "$flag_grub_default_grep_korux" \
-"FAIL: Grub distributor is not set to KoruX in /etc/default/grub"
-
-check_err_counter
-
-# ----------------------------------------
-
-echo "--- hooks_work_check ---"
-
-err_counter=0
-flag_9100_root_vifm="fail"
-flag_9100_root_mc="fail"
-
-if [ -d /root/.config/vifm ] && [ "$(ls /root/.config/vifm 2>/dev/null)" ];
-then
-	flag_9100_root_vifm="good"
-fi
-
-if [ -d /root/.config/mc ] && [ "$(ls /root/.config/mc 2>/dev/null)" ];
-then
-	flag_9100_root_mc="good"
-fi
-
-check_fail "$flag_9100_root_vifm" \
-"FAIL: Directory /root/.config/vifm missing or empty"
-check_fail "$flag_9100_root_mc" \
-"FAIL: Directory /root/.config/mc missing or empty"
-
-check_err_counter
-
-# ----------------------------------------
-
-err_counter=0
-flag_9110_how_can_i_help_at_boot="fail"
-flag_9110_how_can_i_help_service="fail"
-flag_9110_how_can_i_help_service_enabled="fail"
-
-if [ -x /usr/local/bin/how-can-i-help-at-boot ];
-then
-	flag_9110_how_can_i_help_at_boot="good"
-fi
-
-if [ -s /etc/systemd/system/how-can-i-help.service ];
-then
-	flag_9110_how_can_i_help_service="good"
-fi
-
-if systemctl is-enabled --quiet how-can-i-help.service >/dev/null 2>&1;
-then
-	flag_9110_how_can_i_help_service_enabled="good"
-fi
-
-check_fail "$flag_9110_how_can_i_help_at_boot" \
-"FAIL: File /usr/local/bin/how-can-i-help-at-boot missing or not executable"
-check_fail "$flag_9110_how_can_i_help_service" \
-"FAIL: File /etc/systemd/system/how-can-i-help.service missing or empty"
-check_fail "$flag_9110_how_can_i_help_service_enabled" \
-"FAIL: Service how-can-i-help.service not enabled"
-
-check_err_counter
-
-# ----------------------------------------
-
-err_counter=0
-flag_9120_docker_keyrings="fail"
-flag_9120_docker_sources_list="fail"
-
-if [ -s /etc/apt/keyrings/docker.asc ];
-then
-	flag_9120_docker_keyrings="good"
-fi
-
-if [ -s /etc/apt/sources.list.d/docker.list ];
-then
-	flag_9120_docker_sources_list="good"
-fi
-
-docker_pkgs="docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+docker_pkgs="docker-ce docker-ce-cli containerd.io docker-buildx-plugin \
+docker-compose-plugin"
 
 for p in $docker_pkgs;
 do
 	fail_if_package_not_found "$p"
 done
 
-check_fail "$flag_9120_docker_keyrings" \
-"FAIL: File /etc/apt/keyrings/docker.asc missing or empty"
-check_fail "$flag_9120_docker_sources_list" \
-"FAIL: File /etc/apt/sources.list.d/docker.list missing or empty"
-
 check_err_counter
 
 # ----------------------------------------
 
-err_counter=0
-flag_9130_korux_theme="fail"
-
-current_theme=$(update-alternatives --query desktop-theme | awk '/^Value:/ {print $2}')
-if echo "$current_theme" | grep -q 'korux-theme';
-then
-	flag_9130_korux_theme="good"
-fi
-
-check_fail "$flag_9130_korux_theme" \
-"FAIL: Current desktop theme not 'korux-theme'"
-
-check_err_counter
-
-# ----------------------------------------
-
-# skip tests for 9140 hook
-# nothing to test
-
-# ----------------------------------------
-
-# skip tests for 9150 hook
-# nothing to test
-
-# ----------------------------------------
+echo "--- unwanted_packages_check ---"
 
 err_counter=0
-flag_9160_initd_clean_home="fail"
-flag_9160_rcd_clean_home="fail"
-
-if [ -x /etc/init.d/clean-home ];
-then
-	flag_9160_initd_clean_home="good"
-fi
-
-if ls /etc/rc*.d/*clean-home >/dev/null 2>&1;
-then
-	flag_9160_rcd_clean_home="good"
-fi
-
-check_fail "$flag_9160_initd_clean_home" \
-"FAIL: File /etc/init.d/clean-home missing or not executable"
-check_fail "$flag_9160_rcd_clean_home" \
-"FAIL: File(s) /etc/rc*.d/*clean-home missing"
-
-check_err_counter
-
-# ----------------------------------------
-
-err_counter=0
-flag_9170_rc_packages="fail"
-flag_9170_cache_man="fail"
+flag_rc_packages="fail"
 
 unwanted_pkgs="mlterm* xiterm+thai mozc* anthy* goldendict \
 quodlibet exfalso im-config ibus mythes* myspell* hyphen* \
@@ -330,162 +206,202 @@ fail_if_package_not_found "dconf-cli"
 
 if dpkg -l | awk '/^rc/{print $2}' >/dev/null 2>&1;
 then
-	flag_9170_rc_packages="good"
+	flag_rc_packages="good"
 fi
 
-if [ -d /var/cache/man ] && [ "$(ls /var/cache/man 2>/dev/null)" ];
-then
-	flag_9170_cache_man="good"
-fi
-
-check_fail "$flag_9170_rc_packages" \
+check_fail "$flag_rc_packages" \
 "FAIL: Obsolete or removed packages with 'rc' state found"
-check_fail "$flag_9170_cache_man" \
+
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- dirs_and_files_check ---"
+
+err_counter=0
+flag_etc_grubd="fail"
+flag_etc_default_grub="fail"
+flag_root_config_vifm="fail"
+flag_root_config_mc="fail"
+flag_usr_local_bin_how_can_i_help_at_boot="fail"
+flag_etc_systemd_system_how_can_i_help_service="fail"
+flag_etc_apt_keyrings_docker_asc="fail"
+flag_etc_apt_sources_listd_docker_list="fail"
+flag_etc_initd_clean_home="fail"
+flag_etc_rcd_clean_home="fail"
+flag_var_cache_man="fail"
+flag_etc_default_console_setup="fail"
+flag_etc_lightdm_lightdm_gtk_greeter_conf="fail"
+flag_etc_update_motdd_10_uname="fail"
+flag_etc_pamd_common_auth="fail"
+flag_etc_pamd_common_account="fail"
+flag_etc_security_faillock_conf="fail"
+flag_etc_ssh_sshd_config="fail"
+flag_etc_skel="fail"
+flag_etc_ssl_openssl_cnf="fail"
+flag_etc_sudoersd_pwfeedback="fail"
+flag_etc_issue="fail"
+flag_etc_issue_net="fail"
+flag_etc_motd="fail"
+flag_etc_os_release="fail"
+flag_etc_korux_version="fail"
+flag_etc_bash_bashrc="fail"
+flag_etc_inputrc="fail"
+flag_etc_profile="fail"
+flag_home_user_free_games="fail"
+flag_home_user_how_can_i_help="fail"
+flag_home_user_how_can_i_help_newcomer="fail"
+flag_home_user_config_xfce4_xfconf_xfce_perchannel_xml="fail"
+
+flag_etc_grubd=$(check_dir "/etc/grub.d")
+flag_etc_default_grub=$(check_file "/etc/default/grub")
+flag_root_config_vifm=$(check_dir "/root/.config/vifm")
+flag_root_config_mc=$(check_dir "/root/.config/mc")
+flag_usr_local_bin_how_can_i_help_at_boot=$(check_exe_file \
+"/usr/local/bin/how-can-i-help-at-boot")
+flag_etc_systemd_system_how_can_i_help_service=$(check_file \
+"/etc/systemd/system/how-can-i-help.service")
+flag_etc_apt_keyrings_docker_asc=$(check_file "/etc/apt/keyrings/docker.asc")
+flag_etc_apt_sources_listd_docker_list=$(check_file \
+"/etc/apt/sources.list.d/docker.list")
+
+flag_etc_initd_clean_home=$(check_exe_file "/etc/init.d/clean-home")
+if ls /etc/rc*.d/*clean-home >/dev/null 2>&1;
+then
+	flag_etc_rcd_clean_home="good"
+fi
+
+flag_var_cache_man=$(check_dir "/var/cache/man")
+flag_etc_default_console_setup=$(check_file "/etc/default/console-setup")
+flag_etc_lightdm_lightdm_gtk_greeter_conf=$(check_file \
+"/etc/lightdm/lightdm-gtk-greeter.conf")
+
+if [ ! -x /etc/update-motd.d/10-uname ]; then
+	flag_etc_update_motdd_10_uname="good"
+fi
+
+flag_etc_pamd_common_auth=$(check_file "/etc/pam.d/common-auth")
+flag_etc_pamd_common_account=$(check_file "/etc/pam.d/common-account")
+flag_etc_security_faillock_conf=$(check_file "/etc/security/faillock.conf")
+flag_etc_ssh_sshd_config=$(check_file "/etc/ssh/sshd_config")
+flag_etc_skel=$(check_dir_all "/etc/skel")
+flag_etc_ssl_openssl_cnf=$(check_file "/etc/ssl/openssl.cnf")
+flag_etc_sudoersd_pwfeedback=$(check_file "/etc/sudoers.d/pwfeedback")
+flag_etc_issue=$(check_file "/etc/issue")
+flag_etc_issue_net=$(check_file "/etc/issue.net")
+flag_etc_motd=$(check_file "/etc/motd")
+flag_etc_os_release=$(check_file "/etc/os-release")
+flag_etc_korux_version=$(check_file "/etc/korux_version")
+flag_etc_bash_bashrc=$(check_file "/etc/bash.bashrc")
+flag_etc_inputrc=$(check_file "/etc/inputrc")
+flag_etc_profile=$(check_file "/etc/profile")
+flag_etc_sysctl_conf=$(check_file "/etc/sysctl.conf")
+flag_home_user_free_games=$(check_file "/home/$SUDO_USER/Free-Games")
+flag_home_user_how_can_i_help=$(check_file "/home/$SUDO_USER/how-can-i-help")
+flag_home_user_how_can_i_help_newcomer=$(check_file \
+"/home/$SUDO_USER/how-can-i-help-newcomer")
+flag_home_user_config_xfce4_xfconf_xfce_perchannel_xml=$(check_dir_all \
+"/home/$SUDO_USER/.config/xfce4/xfconf/xfce-perchannel-xml")
+
+check_fail "$flag_etc_grubd" \
+"FAIL: Directory /etc/grub.d missing or empty"
+check_fail "$flag_etc_default_grub" \
+"FAIL: File /etc/default/grub missing or empty"
+check_fail "$flag_root_config_vifm" \
+"FAIL: Directory /root/.config/vifm missing or empty"
+check_fail "$flag_root_config_mc" \
+"FAIL: Directory /root/.config/mc missing or empty"
+check_fail "$flag_usr_local_bin_how_can_i_help_at_boot" \
+"FAIL: File /usr/local/bin/how-can-i-help-at-boot missing or not executable"
+check_fail "$flag_etc_systemd_system_how_can_i_help_service" \
+"FAIL: File /etc/systemd/system/how-can-i-help.service missing or empty"
+check_fail "$flag_etc_apt_keyrings_docker_asc" \
+"FAIL: File /etc/apt/keyrings/docker.asc missing or empty"
+check_fail "$flag_etc_apt_sources_listd_docker_list" \
+"FAIL: File /etc/apt/sources.list.d/docker.list missing or empty"
+check_fail "$flag_etc_initd_clean_home" \
+"FAIL: File /etc/init.d/clean-home missing or not executable"
+check_fail "$flag_etc_rcd_clean_home" \
+"FAIL: File(s) /etc/rc*.d/*clean-home missing"
+check_fail "$flag_var_cache_man" \
 "FAIL: Directory /var/cache/man missing or empty"
-
-check_err_counter
-
-# ----------------------------------------
-
-err_counter=0
-flag_9180_perms_rc_local="fail"
-flag_9180_perms_sudoersd_pwfeedback="fail"
-flag_9180_perms_motd_10_info="fail"
-flag_9180_perms_fonts_cordata="fail"
-flag_9180_perms_fonts_cordata_files="fail"
-flag_9180_perms_korux_version="fail"
-flag_9180_perms_how_can_i_help_service="fail"
-flag_9180_perms_opt_game_ports="fail"
-flag_9180_perms_opt_game_ports_files="fail"
-flag_9180_perms_opt_game_ports_dirs="fail"
-flag_9180_perms_opt_game_ports_install_sh="fail"
-flag_9180_perms_korux_theme_dirs="fail"
-flag_9180_perms_korux_theme_files="fail"
-
-if [ "$(stat -c '%a' /etc/rc.local 2>/dev/null)" = "755" ];
-then
-	flag_9180_perms_rc_local="good"
-fi
-
-if [ "$(stat -c '%a' /etc/sudoers.d/pwfeedback 2>/dev/null)" = "440" ];
-then
-	flag_9180_perms_sudoersd_pwfeedback="good"
-fi
-
-if [ "$(stat -c '%a' /etc/update-motd.d/10-info 2>/dev/null)" = "755" ];
-then
-	flag_9180_perms_motd_10_info="good"
-fi
-
-if [ "$(stat -c '%a' /usr/share/fonts/truetype/cordata 2>/dev/null)" = "755" ];
-then
-	flag_9180_perms_fonts_cordata="good"
-fi
-
-for file in /usr/share/fonts/truetype/cordata/*;
-do
-	if [ "$(stat -c '%a' "$file" 2>/dev/null)" = "644" ];
-	then
-		flag_9180_perms_fonts_cordata_files="good"
-	fi
-done
-
-if [ "$(stat -c '%a' /etc/korux_version 2>/dev/null)" = 644 ];
-then
-	flag_9180_perms_korux_version="good"
-fi
-
-if [ "$(stat -c '%a' /etc/systemd/system/how-can-i-help.service 2>/dev/null)" = "644" ];
-then
-	flag_9180_perms_how_can_i_help_service="good"
-fi
-
-if [ "$(stat -c '%a' /opt/game-ports 2>/dev/null)" = "755" ];
-then
-	flag_9180_perms_opt_game_ports="good"
-fi
-
-if ! find /opt/game-ports -type f ! -perm 644 ! -name 'install.sh' 2>/dev/null | grep -q .;
-then
-	flag_9180_perms_opt_game_ports_files="good"
-fi
-
-if ! find /opt/game-ports/* -type d ! -perm 777 2>/dev/null | grep -q .;
-then
-	flag_9180_perms_opt_game_ports_dirs="good"
-fi
-
-if ! find /opt/game-ports -type f -name 'install.sh' ! -perm 755 2>/dev/null | grep -q .;
-then
-	flag_9180_perms_opt_game_ports_install_sh="good"
-fi
-
-if ! find /usr/share/desktop-base/korux-theme -type d ! -perm 755 2>/dev/null | grep -q .;
-then
-	flag_9180_perms_korux_theme_dirs="good"
-fi
-
-if ! find /usr/share/desktop-base/korux-theme -type f ! -perm 644 2>/dev/null | grep -q .;
-then
-	flag_9180_perms_korux_theme_files="good"
-fi
-
-check_fail "$flag_9180_perms_rc_local" \
-"FAIL: /etc/rc.local does not have 755 permissions"
-check_fail "$flag_9180_perms_sudoersd_pwfeedback" \
-"FAIL: /etc/sudoers.d/pwfeedback does not have 0440 permissions"
-check_fail "$flag_9180_perms_motd_10_info" \
-"FAIL: /etc/update-motd.d/10-info does not have 755 permissions"
-check_fail "$flag_9180_perms_fonts_cordata" \
-"FAIL: /usr/share/fonts/truetype/cordata does not have 755 permissions"
-check_fail "$flag_9180_perms_fonts_cordata_files" \
-"FAIL: some files in /usr/share/fonts/truetype/cordata do not have 644 permissions"
-check_fail "$flag_9180_perms_korux_version" \
-"FAIL: /etc/korux_version does not have 644 permissions"
-check_fail "$flag_9180_perms_how_can_i_help_service" \
-"FAIL: /etc/systemd/system/how-can-i-help.service does not have 644 permissions"
-check_fail "$flag_9180_perms_opt_game_ports" \
-"FAIL: /opt/game-ports does not have 755 permissions"
-check_fail "$flag_9180_perms_opt_game_ports_files" \
-"FAIL: some files in /opt/game-ports do not have 644 permissions"
-check_fail "$flag_9180_perms_opt_game_ports_dirs" \
-"FAIL: some directories in /opt/game-ports/* do not have 777 permissions"
-check_fail "$flag_9180_perms_opt_game_ports_install_sh" \
-"FAIL: some install.sh scripts in /opt/game-ports do not have 755 permissions"
-check_fail "$flag_9180_perms_korux_theme_dirs" \
-"FAIL: some directories in /usr/share/desktop-base/korux-theme do not have 755 permissions"
-check_fail "$flag_9180_perms_korux_theme_files" \
-"FAIL: some files in /usr/share/desktop-base/korux-theme do not have 644 permissions"
-
-check_err_counter
-
-# ----------------------------------------
-
-err_counter=0
-flag_9190_motd_10_uname="fail"
-
-if [ ! -x /etc/update-motd.d/10-uname ];
-then
-	flag_9190_motd_10_uname="good"
-fi
-
-check_fail "$flag_9190_motd_10_uname" \
+check_fail "$flag_etc_default_console_setup" \
+"FAIL: File /etc/default/console-setup missing or empty"
+check_fail "$flag_etc_lightdm_lightdm_gtk_greeter_conf" \
+"FAIL: File /etc/lightdm/lightdm-gtk-greeter.conf missing or empty"
+check_fail "$flag_etc_update_motdd_10_uname" \
 "FAIL: File /etc/update-motd.d/10-uname exist"
+check_fail "$flag_etc_pamd_common_auth" \
+"FAIL: File /etc/pam.d/common-auth missing or empty"
+check_fail "$flag_etc_pamd_common_account" \
+"FAIL: File /etc/pam.d/common-account missing or empty"
+check_fail "$flag_etc_security_faillock_conf" \
+"FAIL: File /etc/security/faillock.conf missing or empty"
+check_fail "$flag_etc_ssh_sshd_config" \
+"FAIL: File /etc/ssh/sshd_config missing or empty"
+check_fail "$flag_etc_skel" \
+"FAIL: Directory /etc/skel missing or empty"
+check_fail "$flag_etc_ssl_openssl_cnf" \
+"FAIL: File /etc/ssl/openssl.cnf missing or empty"
+check_fail "$flag_etc_sudoersd_pwfeedback" \
+"FAIL: File /etc/sudoers.d/pwfeedback missing or empty"
+check_fail "$flag_etc_issue" \
+"FAIL: File /etc/issue missing or empty"
+check_fail "$flag_etc_issue_net" \
+"FAIL: File /etc/issue.net missing or empty"
+check_fail "$flag_etc_motd" \
+"FAIL: File /etc/motd missing or empty"
+check_fail "$flag_etc_os_release" \
+"FAIL: File /etc/os-release missing or empty"
+check_fail "$flag_etc_korux_version" \
+"FAIL: File /etc/korux_version missing or empty"
+check_fail "$flag_etc_bash_bashrc" \
+"FAIL: File /etc/bash.bashrc missing or empty"
+check_fail "$flag_etc_inputrc" \
+"FAIL: File /etc/inputrc missing or empty"
+check_fail "$flag_etc_profile" \
+"FAIL: File /etc/profile missing or empty"
+check_fail "$flag_etc_sysctl_conf" \
+"FAIL: File /etc/sysctl.conf missing or empty"
+check_fail "$flag_home_user_free_games" \
+"FAIL: File /home/$SUDO_USER/Free-Games missing or empty"
+check_fail "$flag_home_user_how_can_i_help" \
+"FAIL: File /home/$SUDO_USER/how-can-i-help missing or empty"
+check_fail "$flag_home_user_how_can_i_help_newcomer" \
+"FAIL: File /home/$SUDO_USER/how-can-i-help-newcomer missing or empty"
+check_fail "$flag_home_user_config_xfce4_xfconf_xfce_perchannel_xml" \
+"FAIL: Directory /home/$SUDO_USER/.config/xfce4/xfconf/xfce-perchannel-xml missing or empty"
 
 check_err_counter
 
 # ----------------------------------------
 
-echo "--- console_setup_check ---"
+echo "--- params_grep_check ---"
 
 err_counter=0
-flag_console_setup="fail"
-flag_console_setup_grep="fail"
-flag_console_setup_service="fail"
+flag_etc_default_grub_grep="fail"
+flag_desktop_theme_grep="fail"
+flag_etc_default_console_setup_grep="fail"
+flag_etc_lightdm_lightdm_gtk_greeter_conf_grep="fail"
+flag_etc_pamd_faillock_grep="fail"
+flag_etc_ssl_openssl_cnf_gost_grep="fail"
+flag_openssl_ciphers_gost_grep="fail"
+flag_etc_sudoersd_pwfeedback_grep="fail"
+flag_etc_files_grep_korux="fail"
+flag_etc_sysctl_conf_grep="fail"
 
-if [ -s /etc/default/console-setup ]; then
-	flag_console_setup="good"
-fi
+grep -q 'quiet' /etc/default/grub >/dev/null 2>&1 && \
+grep -q 'net.ifnames=0' /etc/default/grub >/dev/null 2>&1 && \
+grep -q 'biosdevname=0' /etc/default/grub >/dev/null 2>&1 && \
+grep -q 'slub_debug=P' /etc/default/grub >/dev/null 2>&1 && \
+grep -q 'slab_nomerge' /etc/default/grub >/dev/null 2>&1 && \
+grep -q 'page_poison=1' /etc/default/grub >/dev/null 2>&1 && \
+grep -q 'KoruX' /etc/default/grub >/dev/null 2>&1 && \
+flag_etc_default_grub_grep="good"
+
+current_theme=$(update-alternatives --query desktop-theme | awk '/^Value:/ {print $2}')
+echo "$current_theme" | grep -q 'korux-theme' && \
+flag_desktop_theme_grep="good"
 
 grep -q '^ACTIVE_CONSOLES="/dev/tty\[1-6\]"' \
 /etc/default/console-setup >/dev/null 2>&1 && \
@@ -499,35 +415,7 @@ grep -q '^FONTFACE="TerminusBold"' \
 /etc/default/console-setup >/dev/null 2>&1 && \
 grep -q '^VIDEOMODE=' \
 /etc/default/console-setup >/dev/null 2>&1 && \
-flag_console_setup_grep="good"
-
-if systemctl is-active --quiet console-setup.service >/dev/null 2>&1 && \
-   systemctl is-enabled --quiet console-setup.service >/dev/null 2>&1
-then
-	flag_console_setup_service="good"
-fi
-
-check_fail "$flag_console_setup" \
-"FAIL: File /etc/default/console-setup missing or empty"
-check_fail "$flag_console_setup_grep" \
-"FAIL: Not all required params found in /etc/default/console-setup"
-check_fail "$flag_console_setup_service" \
-"FAIL: Service console-setup.service not active or not enabled"
-
-check_err_counter
-
-# ----------------------------------------
-
-echo "--- lightdm_gtk_greeter_check ---"
-
-err_counter=0
-flag_lightdm_gtk_greeter="fail"
-flag_lightdm_gtk_greeter_grep="fail"
-flag_lightdm_service="fail"
-
-if [ -s /etc/lightdm/lightdm-gtk-greeter.conf ]; then
-	flag_lightdm_gtk_greeter="good"
-fi
+flag_etc_default_console_setup_grep="good"
 
 grep -q '^xft-dpi=100' \
 /etc/lightdm/lightdm-gtk-greeter.conf >/dev/null 2>&1 && \
@@ -541,39 +429,7 @@ grep -q '^indicators=~host;~spacer;~power' \
 /etc/lightdm/lightdm-gtk-greeter.conf >/dev/null 2>&1 && \
 grep -q '^font-name=PxPlus Cordata PPC-400 15' \
 /etc/lightdm/lightdm-gtk-greeter.conf >/dev/null 2>&1 && \
-flag_lightdm_gtk_greeter_grep="good"
-
-if systemctl is-active --quiet lightdm.service >/dev/null 2>&1 && \
-   systemctl is-enabled --quiet lightdm.service >/dev/null 2>&1
-then
-	flag_lightdm_service="good"
-fi
-
-check_fail "$flag_lightdm_gtk_greeter" \
-"FAIL: File /etc/lightdm/lightdm-gtk-greeter.conf missing or empty"
-check_fail "$flag_lightdm_gtk_greeter_grep" \
-"FAIL: Not all required params found in /etc/lightdm/lightdm-gtk-greeter.conf"
-check_fail "$flag_lightdm_service" \
-"FAIL: Service lightdm.service not active or not enabled"
-
-check_err_counter
-
-# ----------------------------------------
-
-echo "--- pamd_check ---"
-
-err_counter=0
-flag_pamd_common_auth="fail"
-flag_pamd_common_account="fail"
-flag_pamd_faillock_grep="fail"
-
-if [ -s /etc/pam.d/common-auth ]; then
-	flag_pamd_common_auth="good"
-fi
-
-if [ -s /etc/pam.d/common-account ]; then
-	flag_pamd_common_account="good"
-fi
+flag_etc_lightdm_lightdm_gtk_greeter_conf_grep="good"
 
 grep -q '^account[[:space:]]\+required[[:space:]]\+pam_faillock.so[[:space:]]*$' \
 /etc/pam.d/common-account >/dev/null 2>&1 && \
@@ -582,77 +438,8 @@ grep -q '^auth[[:space:]]\+required[[:space:]]\+pam_faillock.so[[:space:]]\+prea
 grep -q '^auth[[:space:]]\+\[default=die\][[:space:]]\+pam_faillock.so[[:space:]]\+authfail audit deny=5 unlock_time=600[[:space:]]*$' \
 /etc/pam.d/common-auth >/dev/null 2>&1 && \
 grep -q '^auth[[:space:]]\+sufficient[[:space:]]\+pam_faillock.so[[:space:]]\+authsucc audit deny=5 unlock_time=600[[:space:]]*$' \
-/etc/pam.d/common-auth >/dev/null 2>&1 && flag_pamd_faillock_grep="good"
-
-check_fail "$flag_pamd_common_auth" \
-"FAIL: File /etc/pam.d/common-auth missing or empty"
-check_fail "$flag_pamd_common_account" \
-"FAIL: File /etc/pam.d/common-account missing or empty"
-check_fail "$flag_pamd_faillock_grep" \
-"FAIL: Not all required params found in /etc/pam.d/common-{auth,account}"
-
-check_err_counter
-
-# ----------------------------------------
-
-echo "--- faillock_and_ssh_check ---"
-
-err_counter=0
-flag_faillock_conf="fail"
-flag_sshd_config="fail"
-flag_sshd_service_status="fail"
-
-if [ -s /etc/security/faillock.conf ]; then
-	flag_faillock_conf="good"
-fi
-
-if [ -s /etc/ssh/sshd_config ]; then
-	flag_sshd_config="good"
-fi
-
-if systemctl is-active --quiet sshd.service >/dev/null 2>&1 && \
-   systemctl is-enabled --quiet sshd.service >/dev/null 2>&1
-then
-	flag_sshd_service_status="good"
-fi
-
-check_fail "$flag_faillock_conf" \
-"FAIL: File /etc/security/faillock.conf missing or empty"
-check_fail "$flag_sshd_config" \
-"FAIL: File /etc/ssh/sshd_config missing or empty"
-check_fail "$flag_sshd_service_status" \
-"FAIL: Service sshd.service not active or not enabled"
-check_err_counter
-
-# ----------------------------------------
-
-echo "--- skel_check ---"
-
-err_counter=0
-flag_etc_skel="fail"
-
-if [ -d /etc/skel ] && [ "$(ls -A /etc/skel 2>/dev/null)" ];
-then
-	flag_etc_skel="good"
-fi
-
-check_fail "$flag_etc_skel" \
-"FAIL: Directory /etc/grub.d missing or empty"
-
-check_err_counter
-
-# ----------------------------------------
-
-echo "--- openssl_check ---"
-
-err_counter=0
-flag_openssl_cnf="fail"
-flag_openssl_cnf_gost_grep="fail"
-flag_openssl_ciphers_gost_grep="fail"
-
-if [ -s /etc/ssl/openssl.cnf ]; then
-	flag_openssl_cnf="good"
-fi
+/etc/pam.d/common-auth >/dev/null 2>&1 && \
+flag_etc_pamd_faillock_grep="good"
 
 grep -q '^\[openssl_def\]$' \
 /etc/ssl/openssl.cnf >/dev/null 2>&1 && \
@@ -672,157 +459,210 @@ grep -q '^default_algorithms[[:space:]]*=[[:space:]]*ALL$' \
 /etc/ssl/openssl.cnf >/dev/null 2>&1 && \
 grep -q '^CRYPT_PARAMS[[:space:]]*=[[:space:]]*id-Gost28147-89-CryptoPro-A-ParamSet$' \
 /etc/ssl/openssl.cnf >/dev/null 2>&1 && \
-flag_openssl_cnf_gost_grep="good"
+flag_etc_ssl_openssl_cnf_gost_grep="good"
 
-if openssl ciphers | tr ':' '\n' | grep GOST >/dev/null 2>&1; then
-	flag_openssl_ciphers_gost_grep="good"
-fi
-
-check_fail "$flag_openssl_cnf" \
-"FAIL: File /etc/ssl/openssl.cnf missing or empty"
-check_fail "$flag_openssl_cnf_gost_grep" \
-"FAIL: Not all required GOST engine params found in /etc/ssl/openssl.cnf"
-check_fail "$flag_openssl_ciphers_gost_grep" \
-"FAIL: GOST ciphers are not available in the OpenSSL configuration"
-
-check_err_counter
-
-# ----------------------------------------
-
-echo "--- sudoersd_pwfeedback_check ---"
-
-err_counter=0
-flag_sudoers_pwfeedback="fail"
-flag_sudoers_pwfeedback_grep="fail"
-
-if [ -s /etc/sudoers.d/pwfeedback ]; then
-	flag_sudoers_pwfeedback="good"
-fi
+openssl ciphers | tr ':' '\n' | grep -q GOST && \
+flag_openssl_ciphers_gost_grep="good"
 
 grep -q '^Defaults[[:space:]]\+env_reset,pwfeedback$' \
 /etc/sudoers.d/pwfeedback >/dev/null 2>&1 && \
-flag_sudoers_pwfeedback_grep="good"
+flag_etc_sudoersd_pwfeedback_grep="good"
 
-check_fail "$flag_sudoers_pwfeedback" \
-"FAIL: File /etc/sudoers.d/pwfeedback missing or empty"
-check_fail "$flag_sudoers_pwfeedback_grep" \
+grep -q 'KoruX' /etc/issue >/dev/null 2>&1 && \
+grep -q 'KoruX' /etc/issue.net >/dev/null 2>&1 && \
+grep -q 'KoruX' /etc/motd >/dev/null 2>&1 && \
+grep -q 'KoruX' /etc/os-release >/dev/null 2>&1 && \
+flag_etc_files_grep_korux="good"
+
+grep -q 'kernel.randomize_va_space = 2' \
+/etc/sysctl.conf >/dev/null 2>&1 && \
+flag_etc_sysctl_conf_grep="good"
+
+check_fail "$flag_etc_default_grub_grep" \
+"FAIL: Not all required params found in /etc/default/grub"
+check_fail "$flag_desktop_theme_grep" \
+"FAIL: Current desktop theme not 'korux-theme'"
+check_fail "$flag_etc_default_console_setup_grep" \
+"FAIL: Not all required params found in /etc/default/console-setup"
+check_fail "$flag_etc_lightdm_lightdm_gtk_greeter_conf_grep" \
+"FAIL: Not all required params found in /etc/lightdm/lightdm-gtk-greeter.conf"
+check_fail "$flag_etc_pamd_faillock_grep" \
+"FAIL: Not all required params found in /etc/pam.d/common-{auth,account}"
+check_fail "$flag_etc_ssl_openssl_cnf_gost_grep" \
+"FAIL: Not all required GOST engine params found in /etc/ssl/openssl.cnf"
+check_fail "$flag_openssl_ciphers_gost_grep" \
+"FAIL: GOST ciphers are not available in the OpenSSL configuration"
+check_fail "$flag_etc_sudoersd_pwfeedback_grep" \
 "FAIL: Not all required params found in /etc/sudoers.d/pwfeedback"
-
-check_err_counter
-
-# ----------------------------------------
-
-echo "--- korux_etc_files_grep_check ---"
-
-err_counter=0
-flag_etc_issue="fail"
-flag_etc_issue_net="fail"
-flag_etc_motd="fail"
-flag_etc_os_release="fail"
-flag_etc_korux_version="fail"
-flag_etc_files_grep_korux="fail"
-
-if [ -s /etc/issue ];
-then
-	flag_etc_issue="good"
-fi
-
-if [ -s /etc/issue.net ];
-then
-	flag_etc_issue_net="good"
-fi
-
-if [ -s /etc/motd ];
-then
-	flag_etc_motd="good"
-fi
-
-if [ -s /etc/os-release ];
-then
-	flag_etc_os_release="good"
-fi
-
-if [ -s /etc/korux_version ];
-then
-	flag_etc_korux_version="good"
-fi
-
-if grep -q 'KoruX' \
-   /etc/issue /etc/issue.net /etc/motd /etc/os-release >/dev/null 2>&1;
-then
-	flag_etc_files_grep_korux="good"
-fi
-
-check_fail "$flag_etc_issue" \
-"FAIL: File /etc/issue missing or empty"
-check_fail "$flag_etc_issue_net" \
-"FAIL: File /etc/issue.net missing or empty"
-check_fail "$flag_etc_motd" \
-"FAIL: File /etc/motd missing or empty"
-check_fail "$flag_etc_os_release" \
-"FAIL: File /etc/os-release missing or empty"
-check_fail "$flag_etc_korux_version" \
-"FAIL: File /etc/korux_version missing or empty"
 check_fail "$flag_etc_files_grep_korux" \
 "FAIL: Not all required params found in /etc/{issue,issue.net,motd,os-release}"
-
-check_err_counter
-
-# ----------------------------------------
-
-echo "--- bash_etc_config_files_check ---"
-
-err_counter=0
-flag_etc_bash_bashrc="fail"
-flag_etc_inputrc="fail"
-flag_etc_profile="fail"
-
-if [ -s /etc/bash.bashrc ];
-then
-	flag_etc_bash_bashrc="good"
-fi
-
-if [ -s /etc/inputrc ];
-then
-	flag_etc_inputrc="good"
-fi
-
-if [ -s /etc/profile ];
-then
-	flag_etc_profile="good"
-fi
-
-check_fail "$flag_etc_bash_bashrc" \
-"FAIL: File /etc/bash.bashrc missing or empty"
-check_fail "$flag_etc_inputrc" \
-"FAIL: File /etc/inputrc missing or empty"
-check_fail "$flag_etc_profile" \
-"FAIL: File /etc/profile missing or empty"
-
-check_err_counter
-
-# ----------------------------------------
-
-echo "--- sysctl_check ---"
-
-err_counter=0
-flag_etc_sysctl_conf="fail"
-
-if [ -s /etc/sysctl.conf ];
-then
-	flag_etc_sysctl_conf="good"
-fi
-
-if grep -q 'kernel.randomize_va_space = 2' \
-   /etc/sysctl.conf >/dev/null 2>&1;
-then
-	flag_etc_sysctl_conf_grep="good"
-fi
-
-check_fail "$flag_etc_sysctl_conf" \
-"FAIL: File /etc/sysctl.conf missing or empty"
 check_fail "$flag_etc_sysctl_conf_grep" \
 "FAIL: Not all required params found in /etc/sysctl.conf"
+
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- systemctl_services_check ---"
+
+err_counter=0
+flag_how_can_i_help_service_enabled="fail"
+flag_console_setup_service_enabled="fail"
+flag_console_setup_service_active="fail"
+flag_lightdm_service_enabled="fail"
+flag_lightdm_service_active="fail"
+flag_sshd_service_enabled="fail"
+flag_sshd_service_active="fail"
+
+flag_how_can_i_help_service_enabled=$(check_systemctl_enabled \
+"how-can-i-help.service")
+flag_console_setup_service_enabled=$(check_systemctl_enabled \
+"console-setup.service")
+flag_console_setup_service_active=$(check_systemctl_active \
+"console-setup.service")
+flag_lightdm_service_enabled=$(check_systemctl_enabled \
+"lightdm.service")
+flag_lightdm_service_active=$(check_systemctl_active \
+"lightdm.service")
+flag_sshd_service_enabled=$(check_systemctl_enabled \
+"sshd.service")
+flag_sshd_service_active=$(check_systemctl_active \
+"sshd.service")
+
+check_fail "$flag_how_can_i_help_service_enabled" \
+"FAIL: Service how-can-i-help.service not enabled"
+check_fail "$flag_console_setup_service_enabled" \
+"FAIL: Service console-setup.service not enabled"
+check_fail "$flag_console_setup_service_active" \
+"FAIL: Service console-setup.service not active"
+check_fail "$flag_lightdm_service_enabled" \
+"FAIL: Service lightdm.service not enabled"
+check_fail "$flag_lightdm_service_active" \
+"FAIL: Service lightdm.service not active"
+check_fail "$flag_sshd_service_enabled" \
+"FAIL: Service sshd.service not enabled"
+check_fail "$flag_sshd_service_active" \
+"FAIL: Service sshd.service not active"
+
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- permissions_check ---"
+
+err_counter=0
+flag_perms_etc_rc_local="fail"
+flag_perms_etc_sudoersd_pwfeedback="fail"
+flag_perms_etc_update_motdd_10_info="fail"
+flag_perms_usr_share_fonts_truetype_cordata="fail"
+flag_perms_usr_share_fonts_truetype_cordata_files="fail"
+flag_perms_etc_korux_version="fail"
+flag_perms_etc_systemd_system_how_can_i_help_service="fail"
+flag_perms_opt_game_ports="fail"
+flag_perms_opt_game_ports_files="fail"
+flag_perms_opt_game_ports_dirs="fail"
+flag_perms_opt_game_ports_install_scripts="fail"
+flag_perms_usr_share_desktop_base_korux_theme_dirs="fail"
+flag_perms_usr_share_desktop_base_korux_theme_files="fail"
+
+[ "$(stat -c '%a' /etc/rc.local 2>/dev/null)" = "755" ] && \
+flag_perms_etc_rc_local="good"
+
+[ "$(stat -c '%a' /etc/sudoers.d/pwfeedback 2>/dev/null)" = "440" ] && \
+flag_perms_etc_sudoersd_pwfeedback="good"
+
+[ "$(stat -c '%a' /etc/update-motd.d/10-info 2>/dev/null)" = "755" ] && \
+flag_perms_etc_update_motdd_10_info="good"
+
+[ "$(stat -c '%a' /usr/share/fonts/truetype/cordata 2>/dev/null)" = "755" ] && \
+flag_perms_usr_share_fonts_truetype_cordata="good"
+
+for file in /usr/share/fonts/truetype/cordata/*;
+do
+	[ "$(stat -c '%a' "$file" 2>/dev/null)" = "644" ] && \
+	flag_perms_usr_share_fonts_truetype_cordata_files="good"
+done
+
+[ "$(stat -c '%a' /etc/korux_version 2>/dev/null)" = 644 ] && \
+flag_perms_etc_korux_version="good"
+
+[ "$(stat -c '%a' /etc/systemd/system/how-can-i-help.service 2>/dev/null)" = "644" ] && \
+flag_perms_etc_systemd_system_how_can_i_help_service="good"
+
+[ "$(stat -c '%a' /opt/game-ports 2>/dev/null)" = "755" ] && \
+flag_perms_opt_game_ports="good"
+
+! find /opt/game-ports -type f ! -perm 644 ! -name 'install.sh' 2>/dev/null | grep -q . && \
+flag_perms_opt_game_ports_files="good"
+
+! find /opt/game-ports/* -type d ! -perm 777 2>/dev/null | grep -q . && \
+flag_perms_opt_game_ports_dirs="good"
+
+! find /opt/game-ports -type f -name 'install.sh' ! -perm 755 2>/dev/null | grep -q . && \
+flag_perms_opt_game_ports_install_scripts="good"
+
+! find /usr/share/desktop-base/korux-theme -type d ! -perm 755 2>/dev/null | grep -q . && \
+flag_perms_usr_share_desktop_base_korux_theme_dirs="good"
+
+! find /usr/share/desktop-base/korux-theme -type f ! -perm 644 2>/dev/null | grep -q . && \
+flag_perms_usr_share_desktop_base_korux_theme_files="good"
+
+check_fail "$flag_perms_etc_rc_local" \
+"FAIL: File /etc/rc.local does not have 755 permissions"
+check_fail "$flag_perms_etc_sudoersd_pwfeedback" \
+"FAIL: File /etc/sudoers.d/pwfeedback does not have 440 permissions"
+check_fail "$flag_perms_etc_update_motdd_10_info" \
+"FAIL: File /etc/update-motd.d/10-info does not have 755 permissions"
+check_fail "$flag_perms_usr_share_fonts_truetype_cordata" \
+"FAIL: Directory /usr/share/fonts/truetype/cordata does not have 755 permissions"
+check_fail "$flag_perms_usr_share_fonts_truetype_cordata_files" \
+"FAIL: Some files in /usr/share/fonts/truetype/cordata do not have 644 permissions"
+check_fail "$flag_perms_etc_korux_version" \
+"FAIL: File /etc/korux_version does not have 644 permissions"
+check_fail "$flag_perms_etc_systemd_system_how_can_i_help_service" \
+"FAIL: File /etc/systemd/system/how-can-i-help.service does not have 644 permissions"
+check_fail "$flag_perms_opt_game_ports" \
+"FAIL: Directory /opt/game-ports does not have 755 permissions"
+check_fail "$flag_perms_opt_game_ports_files" \
+"FAIL: Some files in /opt/game-ports do not have 644 permissions"
+check_fail "$flag_perms_opt_game_ports_dirs" \
+"FAIL: Some directories in /opt/game-ports/* do not have 777 permissions"
+check_fail "$flag_perms_opt_game_ports_install_scripts" \
+"FAIL: Some install.sh scripts in /opt/game-ports do not have 755 permissions"
+check_fail "$flag_perms_usr_share_desktop_base_korux_theme_dirs" \
+"FAIL: Some directories in /usr/share/desktop-base/korux-theme do not have 755 permissions"
+check_fail "$flag_perms_usr_share_desktop_base_korux_theme_files" \
+"FAIL: Some files in /usr/share/desktop-base/korux-theme do not have 644 permissions"
+
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- font_cordata_check ---"
+
+err_counter=0
+flag_fc_list_have_cordata="fail"
+
+fc-list | grep Cordata >/dev/null 2>&1 && \
+flag_fc_list_have_cordata="good"
+
+check_fail "$flag_fc_list_have_cordata" \
+"FAIL: Cordata font is not loaded"
+
+check_err_counter
+
+# ----------------------------------------
+
+echo "--- xfce_check ---"
+
+err_counter=0
+flag_current_desktop="fail"
+
+echo "$XDG_CURRENT_DESKTOP" | grep -q XFCE && \
+flag_current_desktop="good"
+
+check_fail "$flag_current_desktop" \
+"FAIL: Current desktop environment not xfce"
 
 check_err_counter
 
@@ -832,6 +672,13 @@ if [ -s FAILED ];
 then
 	chown "$SUDO_USER:" FAILED
 	echo
-	echo "You have failed tests."
-	echo "Please take a look at the ./FAILED file."
+	echo "Some tests have failed."
+	echo "Please review the ./FAILED file for details."
+	echo "This means your system differs from the expected KoruX configuration."
+	echo
+	echo "For reference, see the official configuration at:"
+	echo "https://github.com/KoruX-Gnu-Linux/KoruX"
+	echo
+	echo "Compare your system with the official KoruX configuration to resolve these differences."
+	echo
 fi
