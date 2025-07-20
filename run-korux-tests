@@ -130,7 +130,7 @@ check_err_counter()
 
 # ----------------------------------------
 
-echo "--- pkgs.list.chroot packages check ---"
+echo "-> pkgs.list.chroot packages check"
 
 err_counter=0
 
@@ -162,7 +162,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- packages.chroot packages check ---"
+echo "-> packages.chroot packages check"
 
 err_counter=0
 
@@ -175,7 +175,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- docker packages check ---"
+echo "-> docker packages check"
 
 err_counter=0
 
@@ -191,7 +191,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- unwanted packages check ---"
+echo "-> unwanted packages check"
 
 err_counter=0
 flag_rc_packages="fail"
@@ -220,7 +220,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- dirs and files check ---"
+echo "-> dirs and files check"
 
 err_counter=0
 flag_etc_grubd="fail"
@@ -380,7 +380,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- grep params check ---"
+echo "-> grep params check"
 
 err_counter=0
 flag_etc_default_grub_grep="fail"
@@ -507,7 +507,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- systemctl services check ---"
+echo "-> systemctl services check"
 
 err_counter=0
 flag_how_can_i_help_service_enabled="fail"
@@ -552,7 +552,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- permissions check ---"
+echo "-> permissions check"
 
 err_counter=0
 flag_perms_etc_rc_local="fail"
@@ -612,37 +612,37 @@ flag_perms_usr_share_desktop_base_korux_theme_dirs="good"
 flag_perms_usr_share_desktop_base_korux_theme_files="good"
 
 check_fail "$flag_perms_etc_rc_local" \
-"FAIL: File /etc/rc.local does not have 755 permissions"
+"FAIL: File /etc/rc.local does not have 755 permissions or missing"
 check_fail "$flag_perms_etc_sudoersd_pwfeedback" \
-"FAIL: File /etc/sudoers.d/pwfeedback does not have 440 permissions"
+"FAIL: File /etc/sudoers.d/pwfeedback does not have 440 permissions or missing"
 check_fail "$flag_perms_etc_update_motdd_10_info" \
-"FAIL: File /etc/update-motd.d/10-info does not have 755 permissions"
+"FAIL: File /etc/update-motd.d/10-info does not have 755 permissions or missing"
 check_fail "$flag_perms_usr_share_fonts_truetype_cordata" \
-"FAIL: Directory /usr/share/fonts/truetype/cordata does not have 755 permissions"
+"FAIL: Directory /usr/share/fonts/truetype/cordata does not have 755 permissions or missing"
 check_fail "$flag_perms_usr_share_fonts_truetype_cordata_files" \
-"FAIL: Some files in /usr/share/fonts/truetype/cordata do not have 644 permissions"
+"FAIL: Some files in /usr/share/fonts/truetype/cordata do not have 644 permissions or missing"
 check_fail "$flag_perms_etc_korux_version" \
-"FAIL: File /etc/korux_version does not have 644 permissions"
+"FAIL: File /etc/korux_version does not have 644 permissions or missing"
 check_fail "$flag_perms_etc_systemd_system_how_can_i_help_service" \
-"FAIL: File /etc/systemd/system/how-can-i-help.service does not have 644 permissions"
+"FAIL: File /etc/systemd/system/how-can-i-help.service does not have 644 permissions or missing"
 check_fail "$flag_perms_opt_game_ports" \
-"FAIL: Directory /opt/game-ports does not have 755 permissions"
+"FAIL: Directory /opt/game-ports does not have 755 permissions or missing"
 check_fail "$flag_perms_opt_game_ports_files" \
-"FAIL: Some files in /opt/game-ports do not have 644 permissions"
+"FAIL: Some files in /opt/game-ports do not have 644 permissions or missing"
 check_fail "$flag_perms_opt_game_ports_dirs" \
-"FAIL: Some directories in /opt/game-ports/* do not have 777 permissions"
+"FAIL: Some directories in /opt/game-ports/* do not have 777 permissions or missing"
 check_fail "$flag_perms_opt_game_ports_install_scripts" \
-"FAIL: Some install.sh scripts in /opt/game-ports do not have 755 permissions"
+"FAIL: Some install.sh scripts in /opt/game-ports do not have 755 permissions or missing"
 check_fail "$flag_perms_usr_share_desktop_base_korux_theme_dirs" \
-"FAIL: Some directories in /usr/share/desktop-base/korux-theme do not have 755 permissions"
+"FAIL: Some directories in /usr/share/desktop-base/korux-theme do not have 755 permissions or missing"
 check_fail "$flag_perms_usr_share_desktop_base_korux_theme_files" \
-"FAIL: Some files in /usr/share/desktop-base/korux-theme do not have 644 permissions"
+"FAIL: Some files in /usr/share/desktop-base/korux-theme do not have 644 permissions or missing"
 
 check_err_counter
 
 # ----------------------------------------
 
-echo "--- font cordata check ---"
+echo "-> font cordata check"
 
 err_counter=0
 flag_fc_list_have_cordata="fail"
@@ -657,7 +657,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- xfce check ---"
+echo "-> xfce check"
 
 err_counter=0
 flag_current_desktop="fail"
