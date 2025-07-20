@@ -119,14 +119,18 @@ check_err_counter()
 	if [ "$err_counter" -gt 0 ];
 	then
 		echo "STATUS: FAILED"
+		echo "----------------------------------------"
+		echo
 	else
 		echo "STATUS: PASS"
+		echo "----------------------------------------"
+		echo
 	fi
 }
 
 # ----------------------------------------
 
-echo "--- all_packages_check ---"
+echo "--- pkgs.list.chroot packages check ---"
 
 err_counter=0
 
@@ -158,7 +162,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- chroot_packages_check ---"
+echo "--- packages.chroot packages check ---"
 
 err_counter=0
 
@@ -171,7 +175,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- docker_packages_check ---"
+echo "--- docker packages check ---"
 
 err_counter=0
 
@@ -187,7 +191,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- unwanted_packages_check ---"
+echo "--- unwanted packages check ---"
 
 err_counter=0
 flag_rc_packages="fail"
@@ -216,7 +220,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- dirs_and_files_check ---"
+echo "--- dirs and files check ---"
 
 err_counter=0
 flag_etc_grubd="fail"
@@ -376,7 +380,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- params_grep_check ---"
+echo "--- grep params check ---"
 
 err_counter=0
 flag_etc_default_grub_grep="fail"
@@ -503,7 +507,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- systemctl_services_check ---"
+echo "--- systemctl services check ---"
 
 err_counter=0
 flag_how_can_i_help_service_enabled="fail"
@@ -548,7 +552,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- permissions_check ---"
+echo "--- permissions check ---"
 
 err_counter=0
 flag_perms_etc_rc_local="fail"
@@ -638,7 +642,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- font_cordata_check ---"
+echo "--- font cordata check ---"
 
 err_counter=0
 flag_fc_list_have_cordata="fail"
@@ -653,7 +657,7 @@ check_err_counter
 
 # ----------------------------------------
 
-echo "--- xfce_check ---"
+echo "--- xfce check ---"
 
 err_counter=0
 flag_current_desktop="fail"
@@ -671,7 +675,6 @@ check_err_counter
 if [ -s FAILED ];
 then
 	chown "$SUDO_USER:" FAILED
-	echo
 	echo "Some tests have failed."
 	echo "Please review the ./FAILED file for details."
 	echo "This means your system differs from the expected KoruX configuration."
@@ -680,5 +683,9 @@ then
 	echo "https://github.com/KoruX-Gnu-Linux/KoruX"
 	echo
 	echo "Compare your system with the official KoruX configuration to resolve these differences."
+	echo
+else
+	echo
+	echo "All tests passed."
 	echo
 fi
