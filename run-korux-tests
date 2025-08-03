@@ -2,7 +2,7 @@
 #
 # This script is intended for automated post-installation testing of the KoruX
 # OS, which is built using the live-build project. See the link for details:
-# https://github.com/KoruX-Gnu-Linux/KoruX
+# https://github.com/KoruX-GNU-Linux/KoruX
 #
 
 if [ "$(id -u)" -ne 0 ];
@@ -136,7 +136,7 @@ err_counter=0
 
 for f in live.list.chroot pkgs.list.chroot;
 do
-	wget https://github.com/KoruX-Gnu-Linux/KoruX/raw/master/config/package-lists/$f -P /tmp >/dev/null 2>&1
+	wget https://github.com/KoruX-GNU-Linux/KoruX/raw/master/config/package-lists/$f -P /tmp >/dev/null 2>&1
 	grep -v -e '^#' -e '^$' /tmp/$f >> /tmp/all-installed-packages
 	sed -i '/^live-task-xfce$/d;/^live-boot$/d;/^live-config$/d;/^live-config-systemd$/d' \
 	/tmp/all-installed-packages
@@ -680,7 +680,7 @@ then
 	echo "This means your system differs from the expected KoruX configuration."
 	echo
 	echo "For reference, see the official configuration at:"
-	echo "https://github.com/KoruX-Gnu-Linux/KoruX"
+	echo "https://github.com/KoruX-GNU-Linux/KoruX"
 	echo
 	echo "Compare your system with the official KoruX configuration to resolve these differences."
 	echo

@@ -5,7 +5,7 @@ Maintainer: Kirill Rekhov <krekhov.dev@gmail.com>
 Rules-Requires-Root: no
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.7.2
-Homepage: https://github.com/KoruX-Gnu-Linux/korux-tests
+Homepage: https://github.com/KoruX-GNU-Linux/korux-tests
 
 Package: korux-tests
 Architecture: all
