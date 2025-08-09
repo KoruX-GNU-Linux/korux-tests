@@ -166,7 +166,7 @@ echo "-> packages.chroot packages check"
 
 err_counter=0
 
-for p in devilutionx-data devilutionx;
+for p in devilutionx-data devilutionx korux-reference;
 do
 	fail_if_package_not_found "$p"
 done
@@ -517,6 +517,11 @@ flag_lightdm_service_enabled="fail"
 flag_lightdm_service_active="fail"
 flag_sshd_service_enabled="fail"
 flag_sshd_service_active="fail"
+flag_services_failed="fail"
+
+if systemctl --quiet --failed; then
+	flag_services_failed="good"
+fi
 
 flag_how_can_i_help_service_enabled=$(check_systemctl_enabled \
 "how-can-i-help.service")
@@ -547,6 +552,8 @@ check_fail "$flag_sshd_service_enabled" \
 "FAIL: Service sshd.service not enabled"
 check_fail "$flag_sshd_service_active" \
 "FAIL: Service sshd.service not active"
+check_fail "$flag_services_failed" \
+"FAIL: Failed systemd units detected"
 
 check_err_counter
 
