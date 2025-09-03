@@ -227,8 +227,8 @@ flag_etc_grubd="fail"
 flag_etc_default_grub="fail"
 flag_root_config_vifm="fail"
 flag_root_config_mc="fail"
-flag_usr_local_bin_how_can_i_help_at_boot="fail"
-flag_etc_systemd_system_how_can_i_help_service="fail"
+flag_usr_local_bin_qa_at_boot="fail"
+flag_etc_systemd_system_qa_service="fail"
 flag_etc_apt_keyrings_docker_asc="fail"
 flag_etc_apt_sources_listd_docker_list="fail"
 flag_etc_initd_clean_home="fail"
@@ -252,6 +252,7 @@ flag_etc_korux_version="fail"
 flag_etc_bash_bashrc="fail"
 flag_etc_inputrc="fail"
 flag_etc_profile="fail"
+flag_home_user_rc_alert="fail"
 flag_home_user_free_games="fail"
 flag_home_user_how_can_i_help="fail"
 flag_home_user_how_can_i_help_newcomer="fail"
@@ -261,10 +262,10 @@ flag_etc_grubd=$(check_dir "/etc/grub.d")
 flag_etc_default_grub=$(check_file "/etc/default/grub")
 flag_root_config_vifm=$(check_dir "/root/.config/vifm")
 flag_root_config_mc=$(check_dir "/root/.config/mc")
-flag_usr_local_bin_how_can_i_help_at_boot=$(check_exe_file \
-"/usr/local/bin/how-can-i-help-at-boot")
-flag_etc_systemd_system_how_can_i_help_service=$(check_file \
-"/etc/systemd/system/how-can-i-help.service")
+flag_usr_local_bin_qa_at_boot=$(check_exe_file \
+"/usr/local/bin/qa-at-boot")
+flag_etc_systemd_system_qa_service=$(check_file \
+"/etc/systemd/system/qa.service")
 flag_etc_apt_keyrings_docker_asc=$(check_file "/etc/apt/keyrings/docker.asc")
 flag_etc_apt_sources_listd_docker_list=$(check_file \
 "/etc/apt/sources.list.d/docker.list")
@@ -300,6 +301,7 @@ flag_etc_bash_bashrc=$(check_file "/etc/bash.bashrc")
 flag_etc_inputrc=$(check_file "/etc/inputrc")
 flag_etc_profile=$(check_file "/etc/profile")
 flag_etc_sysctl_conf=$(check_file "/etc/sysctl.conf")
+flag_home_user_rc_alert=$(check_file "/home/$SUDO_USER/rc-alert")
 flag_home_user_free_games=$(check_file "/home/$SUDO_USER/Free-Games")
 flag_home_user_how_can_i_help=$(check_file "/home/$SUDO_USER/how-can-i-help")
 flag_home_user_how_can_i_help_newcomer=$(check_file \
@@ -315,10 +317,10 @@ check_fail "$flag_root_config_vifm" \
 "FAIL: Directory /root/.config/vifm missing or empty"
 check_fail "$flag_root_config_mc" \
 "FAIL: Directory /root/.config/mc missing or empty"
-check_fail "$flag_usr_local_bin_how_can_i_help_at_boot" \
-"FAIL: File /usr/local/bin/how-can-i-help-at-boot missing or not executable"
-check_fail "$flag_etc_systemd_system_how_can_i_help_service" \
-"FAIL: File /etc/systemd/system/how-can-i-help.service missing or empty"
+check_fail "$flag_usr_local_bin_qa_at_boot" \
+"FAIL: File /usr/local/bin/qa-at-boot missing or not executable"
+check_fail "$flag_etc_systemd_system_qa_service" \
+"FAIL: File /etc/systemd/system/qa.service missing or empty"
 check_fail "$flag_etc_apt_keyrings_docker_asc" \
 "FAIL: File /etc/apt/keyrings/docker.asc missing or empty"
 check_fail "$flag_etc_apt_sources_listd_docker_list" \
@@ -367,6 +369,8 @@ check_fail "$flag_etc_profile" \
 "FAIL: File /etc/profile missing or empty"
 check_fail "$flag_etc_sysctl_conf" \
 "FAIL: File /etc/sysctl.conf missing or empty"
+check_fail "$flag_home_user_rc_alert" \
+"FAIL: File /home/$SUDO_USER/rc-alert missing or empty"
 check_fail "$flag_home_user_free_games" \
 "FAIL: File /home/$SUDO_USER/Free-Games missing or empty"
 check_fail "$flag_home_user_how_can_i_help" \
@@ -510,21 +514,21 @@ check_err_counter
 echo "-> systemctl services check"
 
 err_counter=0
-flag_how_can_i_help_service_enabled="fail"
 flag_console_setup_service_enabled="fail"
 flag_console_setup_service_active="fail"
 flag_lightdm_service_enabled="fail"
 flag_lightdm_service_active="fail"
 flag_sshd_service_enabled="fail"
 flag_sshd_service_active="fail"
+flag_qa_service_enabled="fail"
 flag_services_failed="fail"
 
 if systemctl --quiet --failed; then
 	flag_services_failed="good"
 fi
 
-flag_how_can_i_help_service_enabled=$(check_systemctl_enabled \
-"how-can-i-help.service")
+flag_qa_service_enabled=$(check_systemctl_enabled \
+"qa.service")
 flag_console_setup_service_enabled=$(check_systemctl_enabled \
 "console-setup.service")
 flag_console_setup_service_active=$(check_systemctl_active \
@@ -538,8 +542,8 @@ flag_sshd_service_enabled=$(check_systemctl_enabled \
 flag_sshd_service_active=$(check_systemctl_active \
 "sshd.service")
 
-check_fail "$flag_how_can_i_help_service_enabled" \
-"FAIL: Service how-can-i-help.service not enabled"
+check_fail "$flag_qa_service_enabled" \
+"FAIL: Service qa.service not enabled"
 check_fail "$flag_console_setup_service_enabled" \
 "FAIL: Service console-setup.service not enabled"
 check_fail "$flag_console_setup_service_active" \
@@ -568,7 +572,7 @@ flag_perms_etc_update_motdd_10_info="fail"
 flag_perms_usr_share_fonts_truetype_cordata="fail"
 flag_perms_usr_share_fonts_truetype_cordata_files="fail"
 flag_perms_etc_korux_version="fail"
-flag_perms_etc_systemd_system_how_can_i_help_service="fail"
+flag_perms_etc_systemd_system_qa_service="fail"
 flag_perms_opt_game_ports="fail"
 flag_perms_opt_game_ports_files="fail"
 flag_perms_opt_game_ports_dirs="fail"
@@ -597,8 +601,8 @@ done
 [ "$(stat -c '%a' /etc/korux_version 2>/dev/null)" = 644 ] && \
 flag_perms_etc_korux_version="good"
 
-[ "$(stat -c '%a' /etc/systemd/system/how-can-i-help.service 2>/dev/null)" = "644" ] && \
-flag_perms_etc_systemd_system_how_can_i_help_service="good"
+[ "$(stat -c '%a' /etc/systemd/system/qa.service 2>/dev/null)" = "644" ] && \
+flag_perms_etc_systemd_system_qa_service="good"
 
 [ "$(stat -c '%a' /opt/game-ports 2>/dev/null)" = "755" ] && \
 flag_perms_opt_game_ports="good"
@@ -630,8 +634,8 @@ check_fail "$flag_perms_usr_share_fonts_truetype_cordata_files" \
 "FAIL: Some files in /usr/share/fonts/truetype/cordata do not have 644 permissions or missing"
 check_fail "$flag_perms_etc_korux_version" \
 "FAIL: File /etc/korux_version does not have 644 permissions or missing"
-check_fail "$flag_perms_etc_systemd_system_how_can_i_help_service" \
-"FAIL: File /etc/systemd/system/how-can-i-help.service does not have 644 permissions or missing"
+check_fail "$flag_perms_etc_systemd_system_qa_service" \
+"FAIL: File /etc/systemd/system/qa.service does not have 644 permissions or missing"
 check_fail "$flag_perms_opt_game_ports" \
 "FAIL: Directory /opt/game-ports does not have 755 permissions or missing"
 check_fail "$flag_perms_opt_game_ports_files" \
